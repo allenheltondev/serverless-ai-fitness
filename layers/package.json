@@ -1,0 +1,17 @@
+{
+  "name": "dependency-layer",
+  "version": "1.0.0",
+  "description": "Houses dependencies for Lambda functions",
+  "author": "allenheltondev",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.262.0",
+    "@aws-sdk/client-secrets-manager": "^3.262.0",
+    "@aws-sdk/util-dynamodb": "^3.262.0",
+    "@gomomento/sdk": "^0.21.0",
+    "openai": "^3.1.0"
+  },
+  "files": [
+    "index.js"
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "Comment": "Generates the workout schedules for a given week",
+  "StartAt": "Generate Weekly Schedule",
+  "States": {
+    "Generate Weekly Schedule": {
+      "Type": "Task",
+      "Resource": "${LambdaInvoke}",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${GenerateWeeklyScheduleFunction}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Process Schedule"
+    },
+    "Process Schedule": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Save Weekly Schedule",
+          "States": {
+            "Save Weekly Schedule": {
+              "Type": "Task",
+              "Resource": "${DynamodbPutItem}",
+              "Parameters": {
+                "TableName": "${TableName}",
+                "Item": {
+                  "pk": {
+                    "S.$": "$.weekDetail.startOfWeek"
+                  },
+                  "sk": {
+                    "S": "schedule"
+                  },
+                  "muscleGroups": {
+                    "L.$": "$.weekDetail.muscleGroups"
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Build Daily Workouts",
+          "States": {
+            "Build Daily Workouts": {
+              "Type": "Map",
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "Query Chat GPT",
+                "States": {
+                  "Query Chat GPT": {
+                    "Type": "Task",
+                    "Resource": "${LambdaInvoke}",
+                    "Parameters": {
+                      "FunctionName": "${QueryChatGPTFunction}",
+                      "Payload": {
+                        "prompt.$": "$.request",
+                        "maxTokens": 1500,
+                        "temperature": ".7"
+                      }
+                    },
+                    "Retry": [
+                      {
+                        "ErrorEquals": [
+                          "Lambda.ServiceException",
+                          "Lambda.AWSLambdaException",
+                          "Lambda.SdkClientException",
+                          "Lambda.TooManyRequestsException"
+                        ],
+                        "IntervalSeconds": 2,
+                        "MaxAttempts": 6,
+                        "BackoffRate": 2
+                      }
+                    ],
+                    "ResultPath": "$.workout",
+                    "Next": "Save Workout",
+                    "Catch": [
+                      {
+                        "ErrorEquals": [
+                          "States.ALL"
+                        ],
+                        "Next": "Unable to Generate Workout"
+                      }
+                    ]
+                  },
+                  "Unable to Generate Workout": {
+                    "Type": "Pass",
+                    "End": true
+                  },
+                  "Save Workout": {
+                    "Type": "Task",
+                    "Resource": "${DynamodbPutItem}",
+                    "Parameters": {
+                      "TableName": "${TableName}",
+                      "Item": {
+                        "pk": {
+                          "S.$": "$.date"
+                        },
+                        "sk": {
+                          "S": "workout"
+                        },
+                        "IsScheduledInFuture": {
+                          "S": "true"
+                        },
+                        "ScheduledDate": {
+                          "S.$": "$.date"
+                        },
+                        "muscleGroup": {
+                          "S.$": "$.muscleGroup"
+                        },
+                        "request": {
+                          "S.$": "$.request"
+                        },
+                        "workout": {
+                          "S.$": "$.workout.Payload.result"
+                        }
+                      }
+                    },
+                    "End": true
+                  }
+                }
+              },
+              "End": true,
+              "ItemsPath": "$.requests"
+            }
+          }
+        }
+      ],
+      "Next": "Send Notification Email",
+      "ResultPath": null
+    },
+    "Send Notification Email": {
+      "Type": "Task",
+      "Resource": "${EventBridgePutEvents}",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "subject.$": "$.weekDetail.email.subject",
+              "to": "${AdminEmail}",
+              "html.$": "$.weekDetail.email.html"
+            },
+            "DetailType": "Send Email",
+            "Source": "Fitness AI"
+          }
+        ]
+      },
+      "End": true
+    }
+  }
+}

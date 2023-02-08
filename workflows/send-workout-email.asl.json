@@ -1,0 +1,119 @@
+{
+  "Comment": "Sends an email for the next day's workout",
+  "StartAt": "Get Next Workout",
+  "States": {
+    "Get Next Workout": {
+      "Type": "Task",
+      "Parameters": {
+        "TableName": "${TableName}",
+        "IndexName": "FutureSchedule",
+        "KeyConditionExpression": "#future = :future",
+        "ExpressionAttributeNames": {
+          "#future": "IsScheduledInFuture"
+        },
+        "ExpressionAttributeValues": {
+          ":future": {
+            "S": "true"
+          }
+        },
+        "Limit": 1
+      },
+      "Resource": "${DynamodbQuery}",
+      "Next": "Has Next Workout?"
+    },
+    "Has Next Workout?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Items",
+          "IsPresent": true,
+          "Next": "Send Email And Update Record"
+        }
+      ],
+      "Default": "No Workout to Process"
+    },
+    "Send Email And Update Record": {
+      "Type": "Parallel",
+      "End": true,
+      "Branches": [
+        {
+          "StartAt": "Format Email",
+          "States": {
+            "Format Email": {
+              "Type": "Task",
+              "Resource": "${LambdaInvoke}",
+              "OutputPath": "$.Payload",
+              "Parameters": {
+                "FunctionName": "${FormatEmailFunction}",
+                "Payload": {
+                  "workout.$": "$.Items[0]"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "Send Email"
+            },
+            "Send Email": {
+              "Type": "Task",
+              "Resource": "${EventBridgePutEvents}",
+              "Parameters": {
+                "Entries": [
+                  {
+                    "Detail": {
+                      "subject.$": "$.subject",
+                      "html.$": "$.message",
+                      "to": "${AdminEmail}"
+                    },
+                    "DetailType": "Send Email",
+                    "Source": "AI Fitness"
+                  }
+                ]
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Remove Scheduled In Future Indicator",
+          "States": {
+            "Remove Scheduled In Future Indicator": {
+              "Type": "Task",
+              "Resource": "${DynamodbUpdateItem}",
+              "Parameters": {
+                "TableName": "${TableName}",
+                "Key": {
+                  "pk": {
+                    "S.$": "$.Items[0].pk.S"
+                  },
+                  "sk": {
+                    "S.$": "$.Items[0].sk.S"
+                  }
+                },
+                "UpdateExpression": "REMOVE #IsScheduled, #ScheduledDate",
+                "ExpressionAttributeNames": {
+                  "#IsScheduled": "IsScheduledInFuture",
+                  "#ScheduledDate": "ScheduledDate"
+                }
+              },
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "No Workout to Process": {
+      "Type": "Succeed"
+    }
+  }
+}
