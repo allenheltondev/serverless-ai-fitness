@@ -13,7 +13,7 @@ This solution is powered by two Step Functions:
 1. **Generate Weekly Schedule** - Randomizes which muscle groups, workout types, and equipment will be on each day and gets the workout from ChatGPT
 2. **Daily Workout Notifier** - Sends an email in the evening with the workout details for the next day
 
-![Architecture of the two Step Function workflows](https://readysetcloud.s3.amazonaws.com/chatgpt_is_my_new_personal_trainer_2.png)
+![Architecture of the two Step Function workflows](./docs/architecture.png)
 
 ## Deployment
 
