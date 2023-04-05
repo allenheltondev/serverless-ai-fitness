@@ -1,9 +1,9 @@
 const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
-const { SimpleCacheClient, EnvMomentoTokenProvider, Configurations } = require('@gomomento/sdk');
+const { CacheClient, EnvMomentoTokenProvider, Configurations } = require('@gomomento/sdk');
 
 const secrets = new SecretsManagerClient();
 let cachedSecrets;
-let momentoClient;
+let cacheClient;
 exports.CACHE_NAME = 'chatgpt';
 
 exports.getSecret = async (secretKey) => {
@@ -18,24 +18,30 @@ exports.getSecret = async (secretKey) => {
   }
 };
 
-exports.getCacheClient = async () => {
-  if (!momentoClient) {
+exports.getCacheClient = async (caches) => {
+  if (!cacheClient) {
     const authToken = await exports.getSecret('momento');
     process.env.AUTH_TOKEN = authToken;
     const credentials = new EnvMomentoTokenProvider({ environmentVariableName: 'AUTH_TOKEN' });
 
-    const cacheClient = new SimpleCacheClient({
+    cacheClient = new CacheClient({
       configuration: Configurations.Laptop.latest(),
       credentialProvider: credentials,
       defaultTtlSeconds: Number(process.env.CACHE_TTL)
     });
-    momentoClient = cacheClient;
 
-    try {
-      await momentoClient.createCache(exports.CACHE_NAME);
-    } catch (err) {
-      console.info(err);
+    await initializeCaches(caches);
+  }
+
+  return cacheClient;
+};
+
+const initializeCaches = async (caches) => {
+  if (caches?.length) {
+    const listCachesResponse = await cacheClient.listCaches();
+    const cachesToAdd = caches.filter(c => !listCachesResponse.caches.some(cache => cache.name == c));
+    for (const cacheToAdd of cachesToAdd) {
+      await cacheClient.createCache(cacheToAdd)
     }
   }
-  return momentoClient;
 };

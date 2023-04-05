@@ -1,6 +1,18 @@
 let muscleGroups = ['chest', 'arm', 'shoulder', 'back', 'leg'];
-let workoutTypes = ['as a circuit', 'in supersets', 'as a standard workout'];
-let equipment = [{ type: 'barbells', threshold: .9 }, { type: 'dumbbells', threshold: .75 }, { type: 'kettlebells', threshold: .45 }, { type: 'medicine balls', threshold: .3 }];
+let workoutTypes = [
+  { description: 'circuit workout', shortDescription: 'Circuit'}, 
+  { description: 'workout structured in supersets', shortDescription: 'Supersets'}, 
+  { description: 'workout', shortDescription: 'Standard Workout'}
+];
+
+let equipment = [
+  { type: 'barbells', threshold: .9 }, 
+  { type: 'dumbbells', threshold: .75 }, 
+  { type: 'kettlebells', threshold: .3 }, 
+  { type: 'medicine balls', threshold: .3 }, 
+  { type: 'battle ropes', threshold: .15 },
+  { type: 'bodyweight exercises', threshold: .35 }
+];
 
 exports.handler = async (event) => {
   const muscleGroupOrder = shuffle(muscleGroups);;
@@ -23,7 +35,7 @@ exports.handler = async (event) => {
     });
 
     days.push(`<b>${workoutDate.toLocaleString('en-us', { weekday: 'long' })}:</b> ` +
-      `${mg.charAt(0).toUpperCase() + mg.slice(1).toLowerCase()}${mg != 'back' ? 's' : ''} ${chatgptRequest.type}`);
+      `${mg.charAt(0).toUpperCase() + mg.slice(1).toLowerCase()}${!['back', 'chest'].includes(mg) ? 's' : ''} - ${chatgptRequest.equipment} (${chatgptRequest.type})`);
   }
 
   weekDetail.email = composeWeeklyEmail(weekDetail.startOfWeek, days);
@@ -49,7 +61,7 @@ const shuffle = (array) => {
 
 const buildChatGptRequest = (muscleGroup) => {
   const workoutType = shuffle(workoutTypes)[0];
-  const equipmentToUse = [];
+  let equipmentToUse = [];
   for (const equipmentPiece of equipment) {
     const randomNumber = Math.random();
     if (randomNumber <= equipmentPiece.threshold) {
@@ -61,9 +73,12 @@ const buildChatGptRequest = (muscleGroup) => {
     equipmentToUse.push(equipment[0].type);
   }
 
-  const request = `Create a ${muscleGroup} workout for strength training that uses ${joinWithAnd(equipmentToUse)} structured ${workoutType}.`;
 
-  return { type: workoutType, request };
+  equipmentToUse = pickThree(equipmentToUse);
+  const workoutEquipment = joinWithAnd(equipmentToUse);
+  const request = `Create ${muscleGroup == 'arm' ? `an arm` : `a ${muscleGroup}`} ${workoutType.description} that utilizes ${workoutEquipment}.`;
+
+  return { type: workoutType.shortDescription, request, equipment: workoutEquipment };
 };
 
 const joinWithAnd = (array) => {
@@ -73,7 +88,7 @@ const joinWithAnd = (array) => {
   }
   for (let i = 0; i < array.length; i++) {
     if (i === array.length - 1) {
-      result += ' and ' + array[i];
+      result += ', and ' + array[i];
     } else if (i === 0) {
       result += array[i];
     } else {
@@ -91,3 +106,16 @@ const composeWeeklyEmail = (startOfWeek, days) => {
 
   return email;
 };
+
+const pickThree = (arr) =>{
+  const tempArr = arr.slice();
+  const itemsToSelect = Math.min(3, tempArr.length);
+
+  const selectedItems = [];
+  for (let i = 0; i < itemsToSelect; i++) {
+    const randomIndex = Math.floor(Math.random() * tempArr.length);
+    selectedItems.push(tempArr.splice(randomIndex, 1)[0]);
+  }
+
+  return selectedItems;
+}

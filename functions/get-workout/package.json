@@ -1,7 +1,7 @@
 {
-  "name": "query-chat-gpt",
+  "name": "get-workout",
   "version": "1.0.0",
-  "description": "Runs a query against ChatGPT with your access token",
+  "description": "Gets th workout for a specific date",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,7 +9,7 @@
   "author": "allenheltondev",
   "license": "ISC",
   "devDependencies": {
-    "@gomomento/sdk": "^0.18.0",
-    "openai": "^3.1.0"
+    "@aws-sdk/client-dynamodb": "^3.306.0",
+    "@aws-sdk/util-dynamodb": "^3.306.0"
   }
 }

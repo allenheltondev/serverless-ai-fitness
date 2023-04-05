@@ -1,9 +1,16 @@
 exports.handler = async (state) => {
-  const subject = `${state.workout.muscleGroup.S.charAt(0).toUpperCase() + state.workout.muscleGroup.S.slice(1).toLowerCase()} Workout for ${state.workout.ScheduledDate.S}`;
-  let detail = state.workout.workout.S.replace(/\n/g, '<br>');
-
   const workoutDate = new Date(state.workout.ScheduledDate.S);
-  const message = `<h3>Here is your ${state.workout.muscleGroup.S} workout for ${workoutDate.toLocaleString('en-us', { weekday: 'long' })}</h3>${detail}`;
+  const subject = `${state.workout.muscleGroup.S.charAt(0).toUpperCase() + state.workout.muscleGroup.S.slice(1).toLowerCase()} Workout for ${workoutDate.toLocaleString('en-us', { weekday: 'long'})} (${workoutDate.getDate()}/${workoutDate.getMonth()})`;
+  
+  const message = `<h3>Warmup</h3>
+  ${state.workout.warmup.S.replace(/\n/g, '<br>')} 
+  <br>
+  <h3>Main Set</h3>
+  ${state.workout.workout.S.replace(/\n/g, '<br>')}
+  <br>
+  <h3>Closing Set</h3>
+  ${state.workout.cooldown.S.replace(/\n/g, '<br>')}
+  `;
 
   return { subject, message };
 }

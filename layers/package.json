@@ -5,11 +5,11 @@
   "author": "allenheltondev",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.262.0",
+    "@aws-sdk/client-dynamodb": "^3.306.0",
     "@aws-sdk/client-secrets-manager": "^3.262.0",
-    "@aws-sdk/util-dynamodb": "^3.262.0",
-    "@gomomento/sdk": "^0.21.0",
-    "openai": "^3.1.0"
+    "@aws-sdk/util-dynamodb": "^3.306.0",
+    "@gomomento/sdk": "^1.8.2",
+    "openai": "^3.2.1"
   },
   "files": [
     "index.js"

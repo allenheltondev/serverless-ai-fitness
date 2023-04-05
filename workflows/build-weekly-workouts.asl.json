@@ -61,17 +61,19 @@
                 "ProcessorConfig": {
                   "Mode": "INLINE"
                 },
-                "StartAt": "Query Chat GPT",
+                "StartAt": "Build Workout",
                 "States": {
-                  "Query Chat GPT": {
+                  "Build Workout": {
                     "Type": "Task",
                     "Resource": "${LambdaInvoke}",
                     "Parameters": {
-                      "FunctionName": "${QueryChatGPTFunction}",
+                      "FunctionName": "${AskChatGPTFunction}",
                       "Payload": {
-                        "prompt.$": "$.request",
-                        "maxTokens": 1500,
-                        "temperature": ".7"
+                        "conversationKey.$": "States.Format('workout-{}', $.date)",
+                        "systemContext": "You are FitGPT, an expert level AI fitness trainer. You create workouts designed for optimal muscle building.",
+                        "query.$": "$.request",
+                        "rememberResponse": true,
+                        "trimResponse": true
                       }
                     },
                     "Retry": [
@@ -87,8 +89,8 @@
                         "BackoffRate": 2
                       }
                     ],
+                    "Next": "Build Warmup and Closer",
                     "ResultPath": "$.workout",
-                    "Next": "Save Workout",
                     "Catch": [
                       {
                         "ErrorEquals": [
@@ -97,6 +99,88 @@
                         "Next": "Unable to Generate Workout"
                       }
                     ]
+                  },
+                  "Build Warmup and Closer": {
+                    "Type": "Parallel",
+                    "Next": "Format Workout Data",
+                    "Branches": [
+                      {
+                        "StartAt": "Build Closer and Cooldown",
+                        "States": {
+                          "Build Closer and Cooldown": {
+                            "Type": "Task",
+                            "Resource": "${LambdaInvoke}",
+                            "Parameters": {
+                              "FunctionName": "${AskChatGPTFunction}",
+                              "Payload": {
+                                "conversationKey.$": "States.Format('workout-{}', $.date)",
+                                "query": "Create a burnout closing set for that workout and an cooldown ab set",
+                                "trimFront": true
+                              }
+                            },
+                            "Retry": [
+                              {
+                                "ErrorEquals": [
+                                  "Lambda.ServiceException",
+                                  "Lambda.AWSLambdaException",
+                                  "Lambda.SdkClientException",
+                                  "Lambda.TooManyRequestsException"
+                                ],
+                                "IntervalSeconds": 2,
+                                "MaxAttempts": 6,
+                                "BackoffRate": 2
+                              }
+                            ],
+                            "End": true,
+                            "OutputPath": "$.Payload"
+                          }
+                        }
+                      },
+                      {
+                        "StartAt": "Build Warmup",
+                        "States": {
+                          "Build Warmup": {
+                            "Type": "Task",
+                            "Resource": "${LambdaInvoke}",
+                            "Parameters": {
+                              "FunctionName": "${AskChatGPTFunction}",
+                              "Payload": {
+                                "conversationKey.$": "States.Format('workout-{}', $.date)",
+                                "query": "Can you generate a 5 to 10 minute calisthenic warmup for that workout?",
+                                "trimResponse": true
+                              }
+                            },
+                            "Retry": [
+                              {
+                                "ErrorEquals": [
+                                  "Lambda.ServiceException",
+                                  "Lambda.AWSLambdaException",
+                                  "Lambda.SdkClientException",
+                                  "Lambda.TooManyRequestsException"
+                                ],
+                                "IntervalSeconds": 2,
+                                "MaxAttempts": 6,
+                                "BackoffRate": 2
+                              }
+                            ],
+                            "End": true,
+                            "OutputPath": "$.Payload"
+                          }
+                        }
+                      }
+                    ],
+                    "ResultPath": "$.additional"
+                  },
+                  "Format Workout Data": {
+                    "Type": "Pass",
+                    "Next": "Save Workout",
+                    "Parameters": {
+                      "date.$": "$.date",
+                      "muscleGroup.$": "$.muscleGroup",
+                      "workout.$": "$.workout.Payload.response",
+                      "warmup.$": "$.additional[1].response",
+                      "cooldown.$": "$.additional[0].response"
+                    }
                   },
                   "Unable to Generate Workout": {
                     "Type": "Pass",
@@ -123,11 +207,14 @@
                         "muscleGroup": {
                           "S.$": "$.muscleGroup"
                         },
-                        "request": {
-                          "S.$": "$.request"
-                        },
                         "workout": {
-                          "S.$": "$.workout.Payload.result"
+                          "S.$": "$.workout"
+                        },
+                        "warmup": {
+                          "S.$": "$.warmup"
+                        },
+                        "cooldown": {
+                          "S.$": "$.cooldown"
                         }
                       }
                     },

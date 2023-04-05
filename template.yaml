@@ -29,6 +29,8 @@ Globals:
     Environment:
       Variables:
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+        SECRET_ID: !Ref APIKeySecret
+        CACHE_TTL: 3600
 
 Resources:
   FitnessTable:
@@ -84,11 +86,12 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole        
 
-  QueryChatGPTFunction:
+  AskChatGPTFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: functions/query-chat-gpt
-      Timeout: 20
+      CodeUri: functions/ask-chatgpt
+      Timeout: 30
+      MemorySize: 512
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -97,12 +100,6 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource: !Ref APIKeySecret
-      Environment:
-        Variables:
-          SECRET_ID: !Ref APIKeySecret
-          CACHE_TTL: 3600
-          MAX_TOKENS: 100
-          DEFAULT_TEMPERATURE: .5
 
   APIKeySecret:
     Type: AWS::SecretsManager::Secret
@@ -127,9 +124,9 @@ Resources:
         DynamodbPutItem: !Sub arn:${AWS::Partition}:states:::dynamodb:putItem
         EventBridgePutEvents: !Sub arn:${AWS::Partition}:states:::events:putEvents
         GenerateWeeklyScheduleFunction: !GetAtt GenerateWeeklyScheduleFunction.Arn
-        TableName: !Ref TableName
-        QueryChatGPTFunction: !GetAtt QueryChatGPTFunction.Arn        
+        TableName: !Ref TableName   
         AdminEmail: !Ref ContactEmail
+        AskChatGPTFunction: !GetAtt AskChatGPTFunction.Arn
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -143,7 +140,7 @@ Resources:
                 - lambda:InvokeFunction
               Resource:
                 - !GetAtt GenerateWeeklyScheduleFunction.Arn
-                - !GetAtt QueryChatGPTFunction.Arn
+                - !GetAtt AskChatGPTFunction.Arn
             - Effect: Allow
               Action:
                 - events:PutEvents
@@ -218,3 +215,36 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 7
+
+  WorkoutApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      TracingEnabled: true
+      StageName: dev
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./openapi.yaml
+
+  GetWorkoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/get-workout
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WorkoutApi
+            Path: /workouts
+            Method: GET
