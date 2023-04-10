@@ -17,9 +17,10 @@ This solution is powered by two Step Functions:
 
 ## Deployment
 
-This solution is written in SAM and can be deployed to your AWS account with the following two commands:
+This is a complete solution with both a user interface and back-end service. To deploy the entire application, you can hook up the repository to an Amplify build. However if you'd rather only deploy the service, you can do so with the following commands:
 
 ```
+cd back-end
 sam build
 sam deploy --guided
 ```

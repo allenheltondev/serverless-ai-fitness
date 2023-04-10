@@ -1,0 +1,51 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 50%;
+  margin: 0 auto;
+  padding: 1em 0 4em 0;
+}
+
+.section {
+  background-color: var(--background);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.sectionContent {
+  line-height: 1.5;
+  white-space: pre-line;
+  color: var(--text);
+}
+
+.mobileHeader {
+  display: none;
+}
+
+.page {
+  background-color: var(--background);
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .container {
+    width: 90%;
+  }
+  
+  .mobileHeader {
+    display: flex;
+    color: var(--text);
+    align-items: center;
+    justify-content: center;
+    margin: .6em 0;    
+  }
+}

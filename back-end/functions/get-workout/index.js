@@ -26,7 +26,8 @@ exports.handler = async (event) => {
   if(!result.Item){
     return {
       statusCode: 404,
-      body: JSON.stringify({message: 'There is no workout for the requested date'})
+      body: JSON.stringify({message: 'There is no workout for the requested date'}),
+      headers: { 'Access-Control-Allow-Origin': '*' }
     }
   }
 
@@ -38,6 +39,7 @@ exports.handler = async (event) => {
       warmup: workout.warmup,
       mainSet: workout.workout,
       cooldown: workout.cooldown
-    })
+    }),
+    headers: { 'Access-Control-Allow-Origin': '*' }
   };
 };

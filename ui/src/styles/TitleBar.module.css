@@ -1,0 +1,36 @@
+.titleBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--background);
+  color: var(--background);
+  position: relative;
+  border-bottom: 1px solid var(--accent) !important;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.3rem;
+  position: absolute;
+  color: var(--text);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.logo {
+  max-width: 100%;
+  height: auto;
+  max-height: 1.5em;
+}
+
+.github {
+  max-height: 1.5em;
+}
+
+@media (max-width: 768px) {
+  .title {
+    display: none;
+  }
+}
