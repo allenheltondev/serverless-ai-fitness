@@ -14,12 +14,12 @@ const Home = () => {
   const [title, setTitle] = useState('');
 
   useEffect(() => {
-    if(router.query.date){
-      try{
+    if (router.query.date) {
+      try {
         const queryDate = new Date(router.query.date.toString());
         setDate(queryDate.toLocaleDateString());
       }
-      catch (err){        
+      catch (err) {
       }
     }
   }, [router.query]);
@@ -27,7 +27,7 @@ const Home = () => {
   useEffect(() => {
     const fetchWorkout = async () => {
       let workoutData = localStorage.getItem(date);
-      if(workoutData){
+      if (workoutData) {
         const cachedData = JSON.parse(workoutData);
         setWorkout(new Workout(cachedData));
         setTitle(`${cachedData.muscleGroup.charAt(0).toUpperCase() + cachedData.muscleGroup.slice(1)} Workout for ${date}`);
@@ -59,7 +59,21 @@ const Home = () => {
   }, [date]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <TitleBar title={''} />
+        <div className={styles.loadingContainer}>
+          <div className={styles.row}>
+            <span className={styles.loading}>Loading</span>
+            <div className={styles.loadingDots}>
+              <div className={styles.dot}></div>
+              <div className={styles.dot}></div>
+              <div className={styles.dot}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!workout) {
@@ -71,7 +85,7 @@ const Home = () => {
       <Head>
         <title>Ready, Set, Cloud Fitness!</title>
       </Head>
-      <TitleBar title={title}/>
+      <TitleBar title={title} />
       <h2 className={styles.mobileHeader}>{title}</h2>
       <div className={styles.container}>
         <div className={styles.section}>
@@ -87,7 +101,7 @@ const Home = () => {
           <p className={styles.sectionContent}>{workout.cooldown}</p>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };
