@@ -10,14 +10,14 @@ const Home = () => {
   const router = useRouter();
   const [workout, setWorkout] = useState<Workout>();
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState(new Date().toLocaleDateString());
+  const [date, setDate] = useState(new Date().toLocaleDateString('en-US'));
   const [title, setTitle] = useState('');
 
   useEffect(() => {
     if (router.query.date) {
       try {
         const queryDate = new Date(router.query.date.toString());
-        setDate(queryDate.toLocaleDateString());
+        setDate(queryDate.toLocaleDateString('en-US'));
       }
       catch (err) {
       }
