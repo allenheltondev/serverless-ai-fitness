@@ -6,11 +6,7 @@ Description: >
 Parameters:
   TableName:
     Type: String
-    Default: ai-fitness  
-  OpenAIApiKey:
-    Type: String
-  MomentoAuthToken:
-    Type: String
+    Default: ai-fitness    
   ContactEmail:
     Type: String
     Description: Email address to send workout emails to
@@ -29,8 +25,6 @@ Globals:
     Environment:
       Variables:
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
-        SECRET_ID: !Ref APIKeySecret
-        CACHE_TTL: 3600
 
 Resources:
   FitnessTable:
@@ -86,34 +80,6 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole        
 
-  AskChatGPTFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: functions/ask-chatgpt
-      Timeout: 30
-      MemorySize: 512
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - secretsmanager:GetSecretValue
-              Resource: !Ref APIKeySecret
-
-  APIKeySecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      SecretString:
-        Fn::Sub:
-          - |-
-            {
-              "openai": "${OpenAIApiKey}",
-              "momento": "${MomentoAuthToken}"              
-            }
-          - OpenAIApiKey: !Ref OpenAIApiKey
-            MomentoAuthToken: !Ref MomentoAuthToken
-
   BuildWeeklyWorkoutsStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -126,7 +92,7 @@ Resources:
         GenerateWeeklyScheduleFunction: !GetAtt GenerateWeeklyScheduleFunction.Arn
         TableName: !Ref TableName   
         AdminEmail: !Ref ContactEmail
-        AskChatGPTFunction: !GetAtt AskChatGPTFunction.Arn
+        AskChatGPTFunction: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -140,7 +106,7 @@ Resources:
                 - lambda:InvokeFunction
               Resource:
                 - !GetAtt GenerateWeeklyScheduleFunction.Arn
-                - !GetAtt AskChatGPTFunction.Arn
+                - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
             - Effect: Allow
               Action:
                 - events:PutEvents

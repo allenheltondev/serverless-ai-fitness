@@ -76,7 +76,7 @@ const buildChatGptRequest = (muscleGroup) => {
 
   equipmentToUse = pickThree(equipmentToUse);
   const workoutEquipment = joinWithAnd(equipmentToUse);
-  const request = `Create ${muscleGroup == 'arm' ? `an arm` : `a ${muscleGroup}`} ${workoutType.description} that utilizes ${workoutEquipment}.`;
+  const request = `Create ${muscleGroup == 'arm' ? `an arm` : `a ${muscleGroup}`} ${workoutType.description} that utilizes ${workoutEquipment}. I need the main set only. Ideally this workout takes about 40 minutes to complete and uses both traditional and creative exercises.`;
 
   return { type: workoutType.shortDescription, request, equipment: workoutEquipment };
 };

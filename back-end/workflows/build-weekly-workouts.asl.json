@@ -72,8 +72,7 @@
                         "conversationKey.$": "States.Format('workout-{}', $.date)",
                         "systemContext": "You are FitGPT, an expert level AI fitness trainer. You create workouts designed for optimal muscle building.",
                         "query.$": "$.request",
-                        "rememberResponse": true,
-                        "trimResponse": true
+                        "rememberResponse": true
                       }
                     },
                     "Retry": [
@@ -87,6 +86,14 @@
                         "IntervalSeconds": 2,
                         "MaxAttempts": 6,
                         "BackoffRate": 2
+                      },
+                      {
+                        "ErrorEquals": [
+                          "RateLimitExceeded"
+                        ],
+                        "BackoffRate": 2,
+                        "IntervalSeconds": 30,
+                        "MaxAttempts": 6
                       }
                     ],
                     "Next": "Build Warmup and Closer",
@@ -114,7 +121,7 @@
                               "FunctionName": "${AskChatGPTFunction}",
                               "Payload": {
                                 "conversationKey.$": "States.Format('workout-{}', $.date)",
-                                "query": "Create a burnout closing set for that workout and an cooldown ab set",
+                                "query": "Create a closing drop set or similar to bring this muscle group to failure. Then, come up with a creative dynamic ab workout that can optionally use medicine balls to close the workout.",
                                 "trimFront": true
                               }
                             },
@@ -129,6 +136,14 @@
                                 "IntervalSeconds": 2,
                                 "MaxAttempts": 6,
                                 "BackoffRate": 2
+                              },
+                              {
+                                "ErrorEquals": [
+                                  "RateLimitExceeded"
+                                ],
+                                "BackoffRate": 2,
+                                "IntervalSeconds": 30,
+                                "MaxAttempts": 6
                               }
                             ],
                             "End": true,
@@ -146,7 +161,7 @@
                               "FunctionName": "${AskChatGPTFunction}",
                               "Payload": {
                                 "conversationKey.$": "States.Format('workout-{}', $.date)",
-                                "query": "Can you generate a 5 to 10 minute calisthenic warmup for that workout?",
+                                "query": "Generate a short warmup with calisthenics and bodyweight excercises appropriate for that workout.",
                                 "trimResponse": true
                               }
                             },
@@ -161,6 +176,14 @@
                                 "IntervalSeconds": 2,
                                 "MaxAttempts": 6,
                                 "BackoffRate": 2
+                              },
+                              {
+                                "ErrorEquals": [
+                                  "RateLimitExceeded"
+                                ],
+                                "BackoffRate": 2,
+                                "IntervalSeconds": 30,
+                                "MaxAttempts": 6
                               }
                             ],
                             "End": true,
