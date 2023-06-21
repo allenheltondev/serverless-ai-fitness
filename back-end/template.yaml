@@ -72,6 +72,13 @@ Resources:
       CodeUri: functions/generate-weekly-schedule
       Policies:
         - AWSLambdaBasicExecutionRole
+
+  GetUserWorkoutPromptsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/get-user-workout-prompts
+      Policies:
+        - AWSLambdaBasicExecutionRole
   
   FormatWorkoutEmailFunction:
     Type: AWS::Serverless::Function
