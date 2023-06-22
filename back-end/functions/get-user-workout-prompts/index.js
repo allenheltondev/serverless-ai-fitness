@@ -15,7 +15,7 @@ const user = {
   experienceLevel: 'expert',
   muscleGroups: ['chest', 'arm', 'shoulder', 'back', 'leg'],
   frequency: ['M', 'T', 'W', 'Th', 'F'],
-  workoutTypes: ['supersets'],
+  workoutTypes: [{ type: 'superset', modifier: 'with at least 4 supersets' }],
   targetTime: 45,
   specialWorkouts: {
     days: ['T', 'Th'],
@@ -42,7 +42,7 @@ exports.handler = async (state) => {
     }
   }
 
-  return workouts;
+  return workouts.map(w => formatWorkout(w));
 };
 
 const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workoutTypes, muscleGroup, targetTime, specialWorkouts) => {
@@ -64,9 +64,10 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
     workout.muscleGroup = 'special workout';
   }
 
-  workout.prompt = `Create a ${workout.workoutType || ''} workout for ${workout.objective} ${workout.workoutType ? 'targeting the ' + workout.muscleGroup : ''} using ${workout.equipment.join(', ')}.` +
-    ` It should be a ${workout.experienceLevel}-level workout that takes around ${workout.targetTime} minutes to complete. Also create a 5-minute dynamic warmup ` +
-    `for this workout and a 5-minute ab set. Your response should be in a JSON object with 'warmup', 'mainSet', and 'ab' properties.`;
+  workout.prompt = `Create a ${workout.workoutType?.type || ''} workout ${workout.workoutType?.modifier || ''} for ` +
+    `${workout.objective} ${workout.workoutType ? 'targeting the ' + workout.muscleGroup : ''} using ${workout.equipment.join(', ')}.` +
+    ` It should be a ${workout.experienceLevel}-level workout that takes around ${workout.targetTime} minutes to complete the main set. ` +
+    `Also create a dynamic warmup with 6 or more related exercises for this workout and an ab set for afterward.`;
 
   return workout;
 };
@@ -102,4 +103,14 @@ const shuffleArray = array => {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
+};
+
+const formatWorkout = (workout) => {
+  return {
+    date: workout.date.split('T')[0],
+    muscleGroup: workout.muscleGroup,
+    equipment: workout.equipment.join(', '),
+    workoutType: workout.workoutType?.type || 'special workout',
+    prompt: workout.prompt
+  };
 };

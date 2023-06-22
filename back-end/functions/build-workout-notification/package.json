@@ -1,0 +1,11 @@
+{
+  "name": "build-workout-notification",
+  "version": "1.0.0",
+  "description": "Creates the notifications to send to users",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "allenheltondev",
+  "license": "ISC"
+}

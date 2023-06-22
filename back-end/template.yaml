@@ -221,3 +221,10 @@ Resources:
             RestApiId: !Ref WorkoutApi
             Path: /workouts
             Method: GET
+
+  BuildWorkoutNotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/build-workout-notification
+      Policies:
+        - AWSLambdaBasicExecutionRole   
