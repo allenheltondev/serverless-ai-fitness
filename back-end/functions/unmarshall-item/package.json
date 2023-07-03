@@ -1,7 +1,7 @@
 {
-  "name": "get-user-workout-prompts",
+  "name": "unmarshall-item",
   "version": "1.0.0",
-  "description": "Generates openai prompts for a user given their preferences",
+  "description": "Unmarshalls raw data from DynamoDB",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,6 +9,6 @@
   "author": "allenheltondev",
   "license": "ISC",
   "devDependencies": {
-    "@aws-sdk/util-dynamodb": "^3.359.0"
+    "@aws-sdk/util-dynamodb": "^3.363.0"
   }
 }

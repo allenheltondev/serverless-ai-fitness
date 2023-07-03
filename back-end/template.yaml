@@ -46,12 +46,24 @@ Resources:
           AttributeType: S
         - AttributeName: ScheduledDate
           AttributeType: S
+        - AttributeName: facet
+          AttributeType: S
+        - AttributeName: facetSortKey
+          AttributeType: S
       GlobalSecondaryIndexes:        
         - IndexName: FutureSchedule
           KeySchema:
             - AttributeName: IsScheduledInFuture
               KeyType: HASH
             - AttributeName: ScheduledDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: facets
+          KeySchema:
+            - AttributeName: facet
+              KeyType: HASH
+            - AttributeName: facetSortKey
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
@@ -227,4 +239,142 @@ Resources:
     Properties:
       CodeUri: functions/build-workout-notification
       Policies:
-        - AWSLambdaBasicExecutionRole   
+        - AWSLambdaBasicExecutionRole
+
+  SaveToDynamoDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/save-to-ddb
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+
+  UnmarshallItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/unmarshall-item
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+  AIFitnessScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: aifitness
+
+  SendWorkoutNotificationStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: EXPRESS
+      DefinitionUri: workflows/send-workout-notification.asl.json
+      DefinitionSubstitutions:
+        DynamoDbGetItem: !Sub arn:${AWS::Partition}:states:::dynamodb:getItem
+        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
+        UnmarshallItem: !GetAtt UnmarshallItemFunction.Arn
+        BuildWorkoutNotification: !GetAtt BuildWorkoutNotificationFunction.Arn
+        EventBridgePutEvents: !Sub arn:${AWS::Partition}:states:::events:putEvents
+        DeleteSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:deleteSchedule
+        TableName: !Ref TableName
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource:
+                - !GetAtt UnmarshallItemFunction.Arn
+                - !GetAtt BuildWorkoutNotificationFunction.Arn
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+            - Effect: Allow
+              Action: scheduler:DeleteSchedule
+              Resource: !Sub arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/aifitness/WORKOUT*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogDelivery
+                - logs:GetLogDelivery
+                - logs:UpdateLogDelivery
+                - logs:DeleteLogDelivery
+                - logs:ListLogDeliveries
+                - logs:PutResourcePolicy
+                - logs:DescribeResourcePolicies
+                - logs:DescribeLogGroups
+              Resource: "*"
+      Logging:
+        Level: ALL
+        IncludeExecutionData: true
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt NotificationLogGroup.Arn
+  
+  NotificationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 30
+
+  GenerateUserWorkoutsStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: workflows/generate-user-workouts.asl.json
+      DefinitionSubstitutions:
+        DynamoDbQuery: !Sub arn:${AWS::Partition}:states:::aws-sdk:dynamodb:query
+        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
+        GetUserWorkoutPrompts: !GetAtt GetUserWorkoutPromptsFunction.Arn
+        AskChatGPT: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
+        SendWorkoutNotification: !Ref SendWorkoutNotificationStateMachine
+        SendWorkoutNotificationRole: !GetAtt SendNotificationSchedulerRole.Arn
+        SchedulerCreateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:createSchedule
+        SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
+        TableName: !Ref TableName
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/facets
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource:
+                - !GetAtt GetUserWorkoutPromptsFunction.Arn
+                - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
+                - !GetAtt SaveToDynamoDBFunction.Arn
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: !GetAtt SendNotificationSchedulerRole.Arn
+            - Effect: Allow
+              Action: scheduler:CreateSchedule
+              Resource: !Sub arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/aifitness/WORKOUT*
+      Events:
+        Trigger:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 17 ? * SUN *)"
+
+  SendNotificationSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow 
+            Principal:
+              Service: 
+                - scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SendNotificationSchedulerPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: states:StartSyncExecution
+                Resource: !GetAtt SendWorkoutNotificationStateMachine.Arn

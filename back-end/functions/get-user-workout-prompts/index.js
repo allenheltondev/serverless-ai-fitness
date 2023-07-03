@@ -1,40 +1,20 @@
-const user = {
-  pk: 'allen',
-  sk: 'user',
-  contactMethod: 'email',
-  email: 'allenheltondev@gmail.com',
-  equipment: [
-    { type: 'barbells', threshold: .9 },
-    { type: 'dumbbells', threshold: .75 },
-    { type: 'kettlebells', threshold: .3 },
-    { type: 'medicine balls', threshold: .3 },
-    { type: 'battle ropes', threshold: .15 },
-    { type: 'bodyweight exercises', threshold: .35 }
-  ],
-  objective: 'muscle building',
-  experienceLevel: 'expert',
-  muscleGroups: ['chest', 'arm', 'shoulder', 'back', 'leg'],
-  frequency: ['M', 'T', 'W', 'Th', 'F'],
-  workoutTypes: [{ type: 'superset', modifier: 'with at least 4 supersets' }],
-  targetTime: 45,
-  specialWorkouts: {
-    days: ['T', 'Th'],
-    percentChance: 15,
-    equipment: ['tractor tire', '5 gallon buckets', '50lb sandbags'],
-    objective: 'cross training, strength training, and cardio'
-  }
-};
+const { unmarshall } = require('@aws-sdk/util-dynamodb');
 
 exports.handler = async (state) => {
+  let user = state.user;
+  if (state.unmarshall) {
+    user = unmarshall(user);
+  }
+
   const days = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
   const workouts = [];
-  const muscleGroups = shuffleArray(state.muscleGroups);
+  const muscleGroups = shuffleArray(user.muscleGroups);
   const currentDate = new Date();
 
   for (let i = 0; i < 7; i++) {
     const day = days[i];
     if (user.frequency.includes(day)) {
-      const workout = createWorkoutPrompt(day, state.equipment, state.experienceLevel, state.objective, state.workoutTypes, muscleGroups.pop(), state.targetTime, state.specialWorkouts);
+      const workout = createWorkoutPrompt(day, user.equipment, user.experienceLevel, user.objective, user.workoutTypes, muscleGroups.pop(), user.targetTime, user.specialWorkouts);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
@@ -57,9 +37,9 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
   };
 
   const isSpecialDay = isSpecialWorkoutDay(specialWorkouts, day);
-  if (isSpecialDay && Math.random() <= specialWorkouts.M.percentChance.N / 100) {
-    workout.equipment = [specialWorkouts.M.equipment.L[Math.floor(Math.random() * specialWorkouts.M.equipment.L.length)].S];
-    workout.objective = specialWorkouts.M.objective.S;
+  if (isSpecialDay && Math.random() <= specialWorkouts.percentChance / 100) {
+    workout.equipment = [specialWorkouts.equipment[Math.floor(Math.random() * specialWorkouts.equipment.length)]];
+    workout.objective = specialWorkouts.objective;
     delete workout.workoutType;
     workout.muscleGroup = 'special workout';
   }
@@ -72,7 +52,7 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
   return workout;
 };
 
-const isSpecialWorkoutDay = (specialWorkouts, day) => specialWorkouts.M.days.L.find(d => d.S == day);
+const isSpecialWorkoutDay = (specialWorkouts, day) => specialWorkouts.days.find(d => d == day);
 
 const getEquipment = (equipment) => {
   if (equipment.length === 0) {
@@ -80,7 +60,7 @@ const getEquipment = (equipment) => {
   }
 
   const selectedEquipment = [];
-  const shuffledEquipment = [...user.equipment].sort(() => 0.5 - Math.random());
+  const shuffledEquipment = [...equipment].sort(() => 0.5 - Math.random());
   const numberOfEquipment = Math.floor(Math.random() * 3) + 1;
 
   while (selectedEquipment.length < numberOfEquipment && shuffledEquipment.length > 0) {

@@ -1,0 +1,154 @@
+{
+  "Comment": "Sends a notification for a workout",
+  "StartAt": "Get Workout",
+  "States": {
+    "Get Workout": {
+      "Type": "Task",
+      "Resource": "${DynamoDbGetItem}",
+      "Parameters": {
+        "TableName": "${TableName}",
+        "Key": {
+          "pk": {
+            "S.$": "$.key.pk"
+          },
+          "sk": {
+            "S.$": "$.key.sk"
+          }
+        }
+      },
+      "Next": "Does Workout Exist?"
+    },
+    "Does Workout Exist?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Item",
+          "IsPresent": true,
+          "Next": "Unmarshall Data"
+        }
+      ],
+      "Default": "Could Not Find Workout"
+    },
+    "Unmarshall Data": {
+      "Type": "Task",
+      "Resource": "${LambdaInvoke}",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${UnmarshallItem}",
+        "Payload": {
+          "item.$": "$.Item"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Switch Notification Type"
+    },
+    "Switch Notification Type": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$$.Execution.Input.contact.type",
+          "StringEquals": "email",
+          "Next": "Get Formatted Notification"
+        },
+        {
+          "Variable": "$$.Execution.Input.contact.type",
+          "StringEquals": "text",
+          "Next": "Delete Not Supported Schedule"
+        }
+      ],
+      "Default": "Delete Schedule"
+    },
+    "Delete Schedule": {
+      "Type": "Task",
+      "Next": "Success",
+      "Parameters": {
+        "Name.$": "$.item.scheduleName",
+        "GroupName": "aifitness"
+      },
+      "Resource": "${DeleteSchedule}"
+    },
+    "Get Formatted Notification": {
+      "Type": "Task",
+      "Resource": "${LambdaInvoke}",
+      "ResultPath": "$.notification",
+      "Parameters": {
+        "FunctionName": "${BuildWorkoutNotification}",
+        "Payload": {
+          "contactMethod": "email",
+          "workout.$": "$.item.workout",
+          "metadata": {
+            "date.$": "$.item.date",
+            "muscleGroup.$": "$.item.muscleGroup"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Publish Email Event"
+    },
+    "Publish Email Event": {
+      "Type": "Task",
+      "Resource": "${EventBridgePutEvents}",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "to.$": "$$.Execution.Input.contact.value",
+              "html.$": "$.notification.Payload.message",
+              "subject.$": "$.notification.Payload.subject"
+            },
+            "DetailType": "Send Email",
+            "Source": "aifitness"
+          }
+        ]
+      },
+      "ResultPath": null,
+      "Next": "Delete Schedule"
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Could Not Find Workout": {
+      "Type": "Fail",
+      "Error": "Workout.NotFound",
+      "Cause": "A workout with the provided id could not be found"
+    },
+    "Delete Not Supported Schedule": {
+      "Type": "Task",
+      "Next": "Not Supported",
+      "Parameters": {
+        "Name.$": "$.item.scheduleName",
+        "GroupName": "aifitness"
+      },
+      "Resource": "${DeleteSchedule}"
+    },
+    "Not Supported": {
+      "Type": "Fail",
+      "Error": "Type.NotSupported",
+      "Cause": "This app does not currently support text messaging"
+    }
+  }
+}
