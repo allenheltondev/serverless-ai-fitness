@@ -18,6 +18,10 @@ exports.handler = async (state) => {
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
+      
+      const notificationDate = new Date(date);
+      notificationDate.setDate(notificationDate.getDate() - 1);
+      workout.notificationDate = `${notificationDate.toISOString().split('T')[0]}T${user.contact.time}:00`;
       workouts.push(workout);
     }
   }

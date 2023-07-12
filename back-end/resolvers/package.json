@@ -1,0 +1,14 @@
+{
+  "name": "resolvers",
+  "version": "1.0.0",
+  "description": "AppSync resolvers",
+  "main": "getWorkout.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "allenheltondev",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-appsync/utils": "^1.2.5"
+  }
+}

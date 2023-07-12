@@ -2,9 +2,9 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  width: 50%;
+  width: 100%;
   margin: 0 auto;
-  padding: 1em 0 4em 0;
+  padding: 0em 0 4em 0;
 }
 
 .section {

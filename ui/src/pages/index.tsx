@@ -4,9 +4,9 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Workout from '../../lib/Workout';
 import TitleBar from '../components/TitleBar';
-import Footer from '../components/Footer';
+import { Authenticator } from '@aws-amplify/ui-react';
 
-const Home = () => {
+const Home = ({ signout, user }: any) => {
   const router = useRouter();
   const [workout, setWorkout] = useState<Workout>();
   const [loading, setLoading] = useState(true);
@@ -81,28 +81,30 @@ const Home = () => {
   }
 
   return (
-    <div className={styles.page}>
-      <Head>
-        <title>Ready, Set, Cloud Fitness!</title>
-      </Head>
-      <TitleBar title={title} />
-      <h2 className={styles.mobileHeader}>{title}</h2>
-      <div className={styles.container}>
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Warmup</h2>
-          <p className={styles.sectionContent}>{workout.warmup}</p>
+    <Authenticator socialProviders={["google"]}>
+      {({ signOut, user }) => (
+        <div className={styles.page}>
+          <Head>
+            <title>Ready, Set, Cloud Fitness!</title>
+          </Head>
+          <h2 className={styles.mobileHeader}>{title}</h2>
+          <div className={styles.container}>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Warmup</h2>
+              <p className={styles.sectionContent}>{workout.warmup}</p>
+            </div>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Main Set</h2>
+              <p className={styles.sectionContent}>{workout.mainSet}</p>
+            </div>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Cooldown</h2>
+              <p className={styles.sectionContent}>{workout.cooldown}</p>
+            </div>
+          </div>
         </div>
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Main Set</h2>
-          <p className={styles.sectionContent}>{workout.mainSet}</p>
-        </div>
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Cooldown</h2>
-          <p className={styles.sectionContent}>{workout.cooldown}</p>
-        </div>
-      </div>
-      <Footer />
-    </div>
+      )}
+    </Authenticator>
   );
 };
 

@@ -1,0 +1,149 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  getUserWorkout(date: String!): Workout
+  getMyProfile: MyProfile
+}
+
+type Mutation {
+  updateMyProfile(input: UserDetail!): Boolean
+}
+
+enum SetType {
+  circuit
+  supersets
+  special_workout
+  standard
+}
+
+type Exercise {
+  name: String!
+  description: String
+}
+
+type Set {
+  numReps: Int!
+  exercises: [Exercise!]!
+}
+
+type MainSet {
+  numSets: Int!
+  setType: SetType!
+  sets: [Set!]!
+}
+
+type WarmupExercise {
+  name: String!
+  numReps: Int!
+}
+
+type Warmup {
+  exercises: [WarmupExercise!]!
+}
+
+type AbsExercise {
+  name: String!
+  numReps: Int!
+}
+
+type Abs {
+  numSets: Int!
+  exercises: [AbsExercise!]!
+}
+
+type Workout {
+  mainSet: MainSet!
+  warmup: Warmup!
+  abs: Abs!
+}
+
+input Contact {
+  type: String!
+  time: String!
+  timezone: String!
+}
+
+input Demographics {
+  firstName: String!
+  lastName: String!
+  dob: String!
+  sex: String!
+}
+
+input Equipment {
+  type: String!
+  threshold: Float!
+}
+
+input SpecialWorkouts {
+  days: [String!]!
+  percentChance: Int!
+  equipment: [String!]!
+  objective: String!
+}
+
+input WorkoutType {
+  type: SetType!
+  modifier: String
+}
+
+input UserDetail {
+  contact: Contact!
+  demographics: Demographics!
+  email: String!
+  equipment: [Equipment!]!
+  objective: String!
+  experienceLevel: String!
+  muscleGroups: [String!]!
+  frequency: [String!]!
+  workoutTypes: [WorkoutType!]!
+  targetTime: Int!
+  specialWorkouts: SpecialWorkouts
+}
+
+type MyProfile {
+  contact: UserContact
+  demographics: UserDemographics
+  email: String!
+  equipment: [UserEquipment]
+  objective: String
+  experienceLevel: String
+  muscleGroups: [String]
+  frequency: [String]
+  workoutTypes: [UserWorkoutType]
+  targetTime: Int
+  specialWorkouts: UserSpecialWorkouts
+}
+
+type UserContact {
+  type: String!
+  time: String!
+  timezone: String!
+}
+
+type UserDemographics {
+  firstName: String!
+  lastName: String!
+  dob: String!
+  sex: String!
+}
+
+type UserEquipment {
+  type: String!
+  threshold: Float!
+}
+
+type UserWorkoutType {
+  type: SetType!
+  modifier: String
+}
+
+type UserSpecialWorkouts {
+  days: [String!]!
+  percentChance: Int!
+  equipment: [String!]!
+  objective: String!
+}

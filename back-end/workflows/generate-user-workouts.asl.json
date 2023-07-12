@@ -249,7 +249,7 @@
                     },
                     "GroupName": "aifitness",
                     "Name.$": "States.Format('WORKOUT-{}-{}',$.user.pk.S, $.date)",
-                    "ScheduleExpression.$": "States.Format('at({}T{}:00)', $.date, $.user.contact.M.time.S)",
+                    "ScheduleExpression.$": "States.Format('at({})', $.notificationDate)",
                     "ScheduleExpressionTimezone.$": "$.user.contact.M.timezone.S",
                     "Target": {
                       "Arn": "${SendWorkoutNotification}",
