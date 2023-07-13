@@ -1,6 +1,7 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import { Auth } from 'aws-amplify';
-import { Authenticator, Text, TextField, Button, RadioGroupField, Radio, View, Flex, Heading, Image, Divider, SelectField, SliderField, CheckboxField, SwitchField } from '@aws-amplify/ui-react';
+import { Auth, API } from 'aws-amplify';
+import { Text, TextField, Button, RadioGroupField, Radio, View, Flex, Heading, Image, Divider, SelectField, SliderField, CheckboxField, SwitchField } from '@aws-amplify/ui-react';
+import { getMyProfile } from '@/graphql/queries';
 
 interface Profile {
   contact: {
@@ -20,6 +21,12 @@ interface Profile {
   frequency: string[],
   muscleGroups: string[]
 };
+
+interface GetProfileResponse {
+  data: {
+    getMyProfile: Profile
+  }
+}
 
 interface MuscleGroupTracker {
   isEnabled: boolean,
@@ -59,18 +66,48 @@ const ProfilePage: React.FC = () => {
   const [shoulderTracker, setShoulderTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
   const [chestTracker, setChestTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
   const [cardioTracker, setCardioTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
+  const [totalBodyTracker, setTotalBodyTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined })
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const user = await Auth.currentAuthenticatedUser();
-      // TODO: fetch user profile data from your database and update the state
+      const profile = await API.graphql({ query: getMyProfile });
+      initializeProfile(profile.data.getMyProfile);
     }
+
     fetchUserData();
   }, []);
 
+  const initializeProfile = (profile: Profile) => {
+    toggleFrequencyCheckboxes(profile.frequency);
+    toggleTrackers(profile.muscleGroups);
+
+    setProfile(profile);
+  };
+
+  const toggleTrackers = (muscleGroups: string[]) => {
+    setArmTracker(initializeTracker(muscleGroups, 'arm'));
+    setBackTracker(initializeTracker(muscleGroups, 'back'));
+    setLegTracker(initializeTracker(muscleGroups, 'leg'));
+    setCardioTracker(initializeTracker(muscleGroups, 'cardio'));
+    setTotalBodyTracker(initializeTracker(muscleGroups, 'total body'));
+    setShoulderTracker(initializeTracker(muscleGroups, 'shoulder'));
+    setChestTracker(initializeTracker(muscleGroups, 'chest'));
+  };
+
+  const initializeTracker = (muscleGroups: string[], muscleGroup: string) => {
+    const count = muscleGroups.reduce((c, mg) => {
+      return c + (mg === muscleGroup ? 1 : 0);
+    }, 0);
+
+    const tracker: MuscleGroupTracker = { isEnabled: (count > 0), count };
+    console.log(muscleGroup, tracker);
+    console.log(muscleGroups);
+    return tracker;
+  };
+
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // TODO: call your API to save the profile data
   }
 
   const handleDemographicChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -98,6 +135,10 @@ const ProfilePage: React.FC = () => {
   };
 
   const toggleFrequencyCheckboxes = (frequency: string[]) => {
+    if (!frequency) {
+      frequency = [];
+    }
+
     setIsSundayChecked(frequency.includes('Su'));
     setIsMondayChecked(frequency.includes('M'));
     setIsTuesdayChecked(frequency.includes('T'));
@@ -119,6 +160,7 @@ const ProfilePage: React.FC = () => {
     muscleGroups = addToArray(muscleGroups, 'chest', chestTracker);
     muscleGroups = addToArray(muscleGroups, 'leg', legTracker);
     muscleGroups = addToArray(muscleGroups, 'cardio', cardioTracker);
+    muscleGroups = addToArray(muscleGroups, 'total body', totalBodyTracker);
 
     return muscleGroups;
   };
@@ -188,7 +230,7 @@ const ProfilePage: React.FC = () => {
                   <SwitchField
                     label="Arms"
                     labelPosition="end"
-                    checked={armTracker.isEnabled}
+                    isChecked={armTracker.isEnabled}
                     width="8em"
                     onChange={(e) => { setArmTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
                   <TextField
@@ -204,7 +246,7 @@ const ProfilePage: React.FC = () => {
                   <SwitchField
                     label="Chest"
                     labelPosition="end"
-                    checked={chestTracker.isEnabled}
+                    isChecked={chestTracker.isEnabled}
                     width="8em"
                     onChange={(e) => { setChestTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
                   <TextField
@@ -220,7 +262,7 @@ const ProfilePage: React.FC = () => {
                   <SwitchField
                     label="Shoulders"
                     labelPosition="end"
-                    checked={shoulderTracker.isEnabled}
+                    isChecked={shoulderTracker.isEnabled}
                     width="8em"
                     onChange={(e) => { setShoulderTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
                   <TextField
@@ -232,13 +274,29 @@ const ProfilePage: React.FC = () => {
                     max="7"
                     onChange={(e) => { setShoulderTracker({ ...shoulderTracker, count: Number(e.target.value) }) }} />
                 </Flex>
+                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
+                  <SwitchField
+                    label="Full Body"
+                    labelPosition="end"
+                    isChecked={totalBodyTracker.isEnabled}
+                    width="8em"
+                    onChange={(e) => { setTotalBodyTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
+                  <TextField
+                    type="number"
+                    label=""
+                    isDisabled={!totalBodyTracker.isEnabled}
+                    placeholder="Times per week"
+                    value={totalBodyTracker.count}
+                    max="7"
+                    onChange={(e) => { setTotalBodyTracker({ ...totalBodyTracker, count: Number(e.target.value) }) }} />
+                </Flex>
               </Flex>
               <Flex direction="column" basis="50%">
                 <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
                   <SwitchField
                     label="Back"
                     labelPosition="end"
-                    checked={backTracker.isEnabled}
+                    isChecked={backTracker.isEnabled}
                     width="6em"
                     onChange={(e) => { setBackTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
                   <TextField
@@ -254,7 +312,7 @@ const ProfilePage: React.FC = () => {
                   <SwitchField
                     label="Legs"
                     labelPosition="end"
-                    checked={legTracker.isEnabled}
+                    isChecked={legTracker.isEnabled}
                     width="6em"
                     onChange={(e) => { setLegTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
                   <TextField
@@ -270,7 +328,7 @@ const ProfilePage: React.FC = () => {
                   <SwitchField
                     label="Cardio"
                     labelPosition="end"
-                    checked={cardioTracker.isEnabled}
+                    isChecked={cardioTracker.isEnabled}
                     width="6em"
                     onChange={(e) => { setCardioTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
                   <TextField

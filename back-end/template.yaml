@@ -184,7 +184,77 @@ Resources:
       AllowUnauthenticatedIdentities: false
       CognitoIdentityProviders:
         - ClientId: !Ref CognitoUserPoolClient
-          ProviderName: !Sub cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}              
+          ProviderName: !Sub cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}
+
+  CognitoAuthenticatedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: 'Allow'
+          Principal:
+            Federated: 'cognito-identity.amazonaws.com'
+          Action: 'sts:AssumeRoleWithWebIdentity'
+          Condition:
+            StringEquals:
+              'cognito-identity.amazonaws.com:aud': !Ref CognitoIdentityPool
+            'ForAnyValue:StringLike':
+              'cognito-identity.amazonaws.com:amr': authenticated
+      Policies:
+      - PolicyName: CognitoAuthorizedPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action: 
+              - s3:PutObject
+              - s3:GetObject
+              - s3:DeleteObject
+            Resource: 
+              - !Sub arn:aws:s3:::${AiFitnessUserFilesBucket}/*
+          - Effect: Allow
+            Action: 
+              - appsync:GraphQL
+            Resource: 
+              - !Ref FitnessGQL
+
+  CognitoIdentityPoolRoles:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref CognitoIdentityPool
+      Roles:
+        authenticated: !GetAtt CognitoAuthenticatedRole.Arn
+
+  CreateProfilePostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/create-profile-post-confirmation
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Events:
+        Cognito:
+          Type: Cognito
+          Properties:
+            Trigger: PostConfirmation
+            UserPool: !Ref CognitoUserPool
+          
+  AiFitnessUserFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['GET', 'PUT', 'POST', 'DELETE']
+            AllowedOrigins: ['*']
 
   FitnessGQL:
     Type: AWS::Serverless::GraphQLApi

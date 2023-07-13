@@ -107,7 +107,7 @@ input UserDetail {
 type MyProfile {
   contact: UserContact
   demographics: UserDemographics
-  email: String!
+  email: String
   equipment: [UserEquipment]
   objective: String
   experienceLevel: String
@@ -125,10 +125,10 @@ type UserContact {
 }
 
 type UserDemographics {
-  firstName: String!
-  lastName: String!
-  dob: String!
-  sex: String!
+  firstName: String
+  lastName: String
+  dob: String
+  sex: String
 }
 
 type UserEquipment {
