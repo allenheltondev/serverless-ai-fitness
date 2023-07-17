@@ -288,6 +288,12 @@ Resources:
             Version: 1.0.0
           DataSource: WorkoutDataSource
           CodeUri: ./resolvers/updateProfile.js
+        updateSettings:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: WorkoutDataSource
+          CodeUri: ./resolvers/updateSettings.js
         getProfile:
           Runtime:
             Name: APPSYNC_JS
@@ -309,12 +315,18 @@ Resources:
             Pipeline:
               - getProfile   
         Mutation:
-          updateMyProfile:
+          updateProfile:
             Runtime:
               Name: APPSYNC_JS
               Version: 1.0.0
             Pipeline:
               - updateProfile
+          updateSettings:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - updateSettings
 
   GraphQLCertificate:
     Type: AWS::CertificateManager::Certificate
@@ -584,6 +596,7 @@ Resources:
       DefinitionUri: workflows/generate-user-workouts.asl.json
       DefinitionSubstitutions:
         DynamoDbQuery: !Sub arn:${AWS::Partition}:states:::aws-sdk:dynamodb:query
+        DynamoDbGetItem: !Sub arn:${AWS::Partition}:states:::dynamodb:getItem
         LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
         GetUserWorkoutPrompts: !GetAtt GetUserWorkoutPromptsFunction.Arn
         AskChatGPT: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
@@ -598,6 +611,9 @@ Resources:
             - Effect: Allow
               Action: dynamodb:Query
               Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/facets
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
             - Effect: Allow
               Action: lambda:InvokeFunction
               Resource:

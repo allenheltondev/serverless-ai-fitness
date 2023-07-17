@@ -1,27 +1,48 @@
 const { unmarshall } = require('@aws-sdk/util-dynamodb');
 
-exports.handler = async (state) => {
-  let user = state.user;
-  if (state.unmarshall) {
-    user = unmarshall(user);
+const PROFILE_DEFAULTS = {
+  objective: 'weight loss',
+  experienceLevel: 'beginner',
+  contact: {
+    time: '18:00'
   }
+};
+
+const SETTINGS_DEFAULTS = {
+  equipment: [{ type: 'bodyweight', threshold: 1 }],
+  targetTime: 30,
+  workoutTypes: [{ type: 'circuit' }],
+  frequency: ['M', 'W', 'F'],
+  muscleGroups: ['total body', 'total body', 'total body']
+};
+
+exports.handler = async (state) => {
+  let profile = state.profile;
+  let settings = state.settings;
+  if (state.unmarshall) {
+    profile = unmarshall(profile);
+    settings = unmarshall(settings);
+  }
+
+  profile = { ...PROFILE_DEFAULTS, ...profile };
+  settings = { ...SETTINGS_DEFAULTS, ...settings };
 
   const days = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
   const workouts = [];
-  const muscleGroups = shuffleArray(user.muscleGroups);
+  const muscleGroups = shuffleArray(settings.muscleGroups);
   const currentDate = new Date();
 
   for (let i = 0; i < 7; i++) {
     const day = days[i];
-    if (user.frequency.includes(day)) {
-      const workout = createWorkoutPrompt(day, user.equipment, user.experienceLevel, user.objective, user.workoutTypes, muscleGroups.pop(), user.targetTime, user.specialWorkouts);
+    if (settings.frequency.includes(day)) {
+      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel, profile.objective, settings.workoutTypes, muscleGroups.pop(), settings.targetTime, settings.specialWorkouts);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
-      
+
       const notificationDate = new Date(date);
       notificationDate.setDate(notificationDate.getDate() - 1);
-      workout.notificationDate = `${notificationDate.toISOString().split('T')[0]}T${user.contact.time}:00`;
+      workout.notificationDate = `${notificationDate.toISOString().split('T')[0]}T${profile.contact.time}:00`;
       workouts.push(workout);
     }
   }
@@ -59,8 +80,8 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
 const isSpecialWorkoutDay = (specialWorkouts, day) => specialWorkouts.days.find(d => d == day);
 
 const getEquipment = (equipment) => {
-  if (equipment.length === 0) {
-    return [];
+  if (!equipment || equipment.length === 0) {
+    return ['bodyweight'];
   }
 
   const selectedEquipment = [];
@@ -92,6 +113,7 @@ const shuffleArray = array => {
 const formatWorkout = (workout) => {
   return {
     date: workout.date.split('T')[0],
+    notificationDate: workout.notificationDate,
     muscleGroup: workout.muscleGroup,
     equipment: workout.equipment.join(', '),
     workoutType: workout.workoutType?.type || 'special workout',

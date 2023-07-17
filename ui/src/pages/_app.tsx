@@ -27,8 +27,7 @@ export default function App({ Component, pageProps }: AppProps) {
             <Button variation="link" isFullWidth={true} justifyContent="left" gap="relative.small" >
               <GiWeightLiftingUp color="black" /><Text>Workouts</Text>
             </Button>
-            <Button variation="link" isFullWidth={true} justifyContent="left" gap="relative.small" ><GiWeight color="black" /><Text>Equipment</Text></Button>
-            <Button variation="link" isFullWidth={true} justifyContent="left" gap="relative.small" ><MdNotifications color="black" /><Text>Notifications</Text></Button>
+            <Button variation="link" isFullWidth={true} justifyContent="left" gap="relative.small" onClick={(() => router.push('/settings'))} ><GiWeight color="black" /><Text>Settings</Text></Button>
             <Button variation="link" isFullWidth={true} justifyContent="left" gap="relative.small" onClick={() => router.push('/profile')}>
               <CgProfile color="black" />
               <Text>Profile</Text>

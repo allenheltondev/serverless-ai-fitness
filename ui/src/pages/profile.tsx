@@ -2,24 +2,26 @@ import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { Auth, API } from 'aws-amplify';
 import { Text, TextField, Button, RadioGroupField, Radio, View, Flex, Heading, Image, Divider, SelectField, SliderField, CheckboxField, SwitchField } from '@aws-amplify/ui-react';
 import { getMyProfile } from '@/graphql/queries';
+import { updateProfile } from '@/graphql/mutations';
+import moment from 'moment-timezone';
 
 interface Profile {
   contact: {
     type: string;
     time: string;
     timezone: string;
+    email: string;
   },
   demographics: {
     firstName: string;
     lastName: string;
+    username: string;
     dob: string;
     sex: string;
+    weight: number
   },
   objective: string,
-  experienceLevel: string,
-  targetTime: number,
-  frequency: string[],
-  muscleGroups: string[]
+  experienceLevel: string
 };
 
 interface GetProfileResponse {
@@ -28,163 +30,81 @@ interface GetProfileResponse {
   }
 }
 
-interface MuscleGroupTracker {
-  isEnabled: boolean,
-  count: number | undefined
-};
-
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<Profile>({
     contact: {
       type: 'email',
       time: '18:00',
-      timezone: 'America/Chicago'
+      timezone: 'America/Chicago',
+      email: ''
     },
     demographics: {
       firstName: '',
       lastName: '',
+      username: '',
       dob: '',
-      sex: ''
+      sex: '',
+      weight: 0
     },
-    objective: '',
-    experienceLevel: 'beginner',
-    targetTime: 45,
-    frequency: [],
-    muscleGroups: []
+    objective: 'weight loss',
+    experienceLevel: 'beginner'
   });
 
-  const [isSundayChecked, setIsSundayChecked] = useState(false);
-  const [isMondayChecked, setIsMondayChecked] = useState(false);
-  const [isTuesdayChecked, setIsTuesdayChecked] = useState(false);
-  const [isWednesdayChecked, setIsWednesdayChecked] = useState(false);
-  const [isThursdayChecked, setIsThursdayChecked] = useState(false);
-  const [isFridayChecked, setIsFridayChecked] = useState(false);
-  const [isSatdayChecked, setIsSaturdayChecked] = useState(false);
-  const [armTracker, setArmTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
-  const [backTracker, setBackTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
-  const [legTracker, setLegTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
-  const [shoulderTracker, setShoulderTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
-  const [chestTracker, setChestTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
-  const [cardioTracker, setCardioTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined });
-  const [totalBodyTracker, setTotalBodyTracker] = useState<MuscleGroupTracker>({ isEnabled: false, count: undefined })
+  const [timezones, setTimezones] = useState<string[]>([]);
+
+  useEffect(() => {
+    setTimezones(moment.tz.names());
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const profile = await API.graphql({ query: getMyProfile });
-      initializeProfile(profile.data.getMyProfile);
+      const profile = await API.graphql<GetProfileResponse>({ query: getMyProfile });
+      setProfile(profile.data.getMyProfile);
     }
 
     fetchUserData();
   }, []);
 
-  const initializeProfile = (profile: Profile) => {
-    toggleFrequencyCheckboxes(profile.frequency);
-    toggleTrackers(profile.muscleGroups);
-
-    setProfile(profile);
-  };
-
-  const toggleTrackers = (muscleGroups: string[]) => {
-    setArmTracker(initializeTracker(muscleGroups, 'arm'));
-    setBackTracker(initializeTracker(muscleGroups, 'back'));
-    setLegTracker(initializeTracker(muscleGroups, 'leg'));
-    setCardioTracker(initializeTracker(muscleGroups, 'cardio'));
-    setTotalBodyTracker(initializeTracker(muscleGroups, 'total body'));
-    setShoulderTracker(initializeTracker(muscleGroups, 'shoulder'));
-    setChestTracker(initializeTracker(muscleGroups, 'chest'));
-  };
-
-  const initializeTracker = (muscleGroups: string[], muscleGroup: string) => {
-    const count = muscleGroups.reduce((c, mg) => {
-      return c + (mg === muscleGroup ? 1 : 0);
-    }, 0);
-
-    const tracker: MuscleGroupTracker = { isEnabled: (count > 0), count };
-    console.log(muscleGroup, tracker);
-    console.log(muscleGroups);
-    return tracker;
-  };
-
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-  }
-
   const handleDemographicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    console.log(name, value);
     setProfile(prev => ({ ...prev, demographics: { ...prev.demographics, [name]: value } }));
-  }
+  };
 
   const handleRootFieldChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleWorkoutDayChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    let newFrequency = [...profile.frequency];
-    const index = newFrequency.indexOf(value);
-    if (index == -1) {
-      newFrequency.push(value);
-    } else {
-      newFrequency.splice(index, 1);
-    }
-    setProfile(prev => ({ ...prev, frequency: newFrequency }));
-    toggleFrequencyCheckboxes(newFrequency);
+  const handleContactChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, contact: { ...prev.contact, [name]: value } }));
   };
 
-  const toggleFrequencyCheckboxes = (frequency: string[]) => {
-    if (!frequency) {
-      frequency = [];
-    }
+  const updateMyProfile = async () => {
+    const response = await API.graphql({
+      query: updateProfile,
+      variables: {
+        input: profile
+      }
+    });
 
-    setIsSundayChecked(frequency.includes('Su'));
-    setIsMondayChecked(frequency.includes('M'));
-    setIsTuesdayChecked(frequency.includes('T'));
-    setIsWednesdayChecked(frequency.includes('W'));
-    setIsThursdayChecked(frequency.includes('Th'));
-    setIsFridayChecked(frequency.includes('F'));
-    setIsSaturdayChecked(frequency.includes('Sa'));
-  };
-
-  const updateProfile = async () => {
-    profile.muscleGroups = calculateMuscleGroups();
-  }
-
-  const calculateMuscleGroups = () => {
-    let muscleGroups: string[] = [];
-    muscleGroups = addToArray(muscleGroups, 'arm', armTracker);
-    muscleGroups = addToArray(muscleGroups, 'shoulder', shoulderTracker);
-    muscleGroups = addToArray(muscleGroups, 'back', backTracker);
-    muscleGroups = addToArray(muscleGroups, 'chest', chestTracker);
-    muscleGroups = addToArray(muscleGroups, 'leg', legTracker);
-    muscleGroups = addToArray(muscleGroups, 'cardio', cardioTracker);
-    muscleGroups = addToArray(muscleGroups, 'total body', totalBodyTracker);
-
-    return muscleGroups;
-  };
-
-  const addToArray = (muscleGroups: string[], muscleGroupName: string, muscleGroup: MuscleGroupTracker) => {
-    let count = muscleGroup.count ?? 0;
-    for (let i = 0; i < count; i++) {
-      muscleGroups.push(muscleGroupName)
-    }
-
-    return muscleGroups;
+    console.log(response);
   };
 
   return (
-
     <Flex direction="column">
       <Flex direction="row" justifyContent="space-between" paddingRight="2em">
         <Flex direction="column" width="60%">
           <Heading level={4}>Tell us about yourself</Heading>
           <View className="mt-3">
-            <Flex direction="column" gap="1em">
-              <TextField label="First Name" required value={profile.demographics.firstName} onChange={handleDemographicChange} />
-              <TextField label="Last Name" required value={profile.demographics.lastName} onChange={handleDemographicChange} />
-              <TextField label="Date of Birth" value={profile.demographics.dob} width="30%" onChange={handleDemographicChange} />
+            <Flex direction="column" gap="1em" marginBottom="1em">
+              <TextField label="First Name" name="firstName" required value={profile.demographics.firstName} onChange={handleDemographicChange} />
+              <TextField label="Last Name" name="lastName" required value={profile.demographics.lastName} onChange={handleDemographicChange} />
+              <TextField label="Display Name" name="username" required value={profile.demographics.username} onChange={handleDemographicChange} />
+              <Flex direction="row" gap="1em">
+                <TextField label="Date of Birth" type="date" name="dob" value={profile.demographics.dob} width="30%" onChange={handleDemographicChange} />
+                <TextField label="Weight (lbs)" name="weight" type="number" value={profile.demographics.weight} width="30%" onChange={handleDemographicChange} />
+              </Flex>
               <RadioGroupField label="" name="sex" direction="row" value={profile.demographics.sex} onChange={handleDemographicChange}>
                 <Radio value="male">Male</Radio>
                 <Radio value="femail">Female</Radio>
@@ -203,146 +123,24 @@ const ProfilePage: React.FC = () => {
                 <option value="building endurance">Build endurance</option>
                 <option value="stress reduction">Reduce stress</option>
               </SelectField>
-              <SliderField
-                name="targetTime"
-                label="Preferred workout length"
-                value={profile.targetTime}
-                min={15}
-                max={90}
-                width="50%"
-                onChange={(e: number) => setProfile(prev => ({ ...prev, targetTime: e }))}
-              />
-            </Flex>
-            <Divider margin="1em .5em" />
-            <Text marginBottom=".3em">Workout Days</Text>
-            <Flex direction="row" gap=".7em">
-              <CheckboxField label="Sunday" name="su" value="Su" checked={isSundayChecked} onChange={handleWorkoutDayChange} />
-              <CheckboxField label="Monday" name="m" value="M" checked={isMondayChecked} onChange={handleWorkoutDayChange} />
-              <CheckboxField label="Tuesday" name="t" value="T" checked={isTuesdayChecked} onChange={handleWorkoutDayChange} />
-              <CheckboxField label="Wednesday" name="w" value="W" checked={isWednesdayChecked} onChange={handleWorkoutDayChange} />
-              <CheckboxField label="Thursday" name="th" value="Th" checked={isThursdayChecked} onChange={handleWorkoutDayChange} />
-              <CheckboxField label="Friday" name="f" value="F" checked={isFridayChecked} onChange={handleWorkoutDayChange} />
-              <CheckboxField label="Saturday" name="sa" value="Sa" checked={isSatdayChecked} onChange={handleWorkoutDayChange} />
-            </Flex>
-            <Flex direction="row" justifyContent="space-between" gap="2em">
-              <Flex direction="column" basis="50%">
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Arms"
-                    labelPosition="end"
-                    isChecked={armTracker.isEnabled}
-                    width="8em"
-                    onChange={(e) => { setArmTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!armTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={armTracker.count}
-                    max="7"
-                    onChange={(e) => { setArmTracker({ ...armTracker, count: Number(e.target.value) }) }} />
-                </Flex>
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Chest"
-                    labelPosition="end"
-                    isChecked={chestTracker.isEnabled}
-                    width="8em"
-                    onChange={(e) => { setChestTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!chestTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={chestTracker.count}
-                    max="7"
-                    onChange={(e) => { setChestTracker({ ...armTracker, count: Number(e.target.value) }) }} />
-                </Flex>
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Shoulders"
-                    labelPosition="end"
-                    isChecked={shoulderTracker.isEnabled}
-                    width="8em"
-                    onChange={(e) => { setShoulderTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!shoulderTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={shoulderTracker.count}
-                    max="7"
-                    onChange={(e) => { setShoulderTracker({ ...shoulderTracker, count: Number(e.target.value) }) }} />
-                </Flex>
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Full Body"
-                    labelPosition="end"
-                    isChecked={totalBodyTracker.isEnabled}
-                    width="8em"
-                    onChange={(e) => { setTotalBodyTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!totalBodyTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={totalBodyTracker.count}
-                    max="7"
-                    onChange={(e) => { setTotalBodyTracker({ ...totalBodyTracker, count: Number(e.target.value) }) }} />
-                </Flex>
-              </Flex>
-              <Flex direction="column" basis="50%">
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Back"
-                    labelPosition="end"
-                    isChecked={backTracker.isEnabled}
-                    width="6em"
-                    onChange={(e) => { setBackTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!backTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={backTracker.count}
-                    max="7"
-                    onChange={(e) => { setBackTracker({ ...backTracker, count: Number(e.target.value) }) }} />
-                </Flex>
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Legs"
-                    labelPosition="end"
-                    isChecked={legTracker.isEnabled}
-                    width="6em"
-                    onChange={(e) => { setLegTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!legTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={legTracker.count}
-                    max="7"
-                    onChange={(e) => { setLegTracker({ ...legTracker, count: Number(e.target.value) }) }} />
-                </Flex>
-                <Flex direction="row" gap="1em" alignItems="center" marginTop=".7em">
-                  <SwitchField
-                    label="Cardio"
-                    labelPosition="end"
-                    isChecked={cardioTracker.isEnabled}
-                    width="6em"
-                    onChange={(e) => { setCardioTracker({ isEnabled: e.target.checked, count: e.target.checked ? 1 : 0 }) }} />
-                  <TextField
-                    type="number"
-                    label=""
-                    isDisabled={!cardioTracker.isEnabled}
-                    placeholder="Times per week"
-                    value={cardioTracker.count}
-                    max="7"
-                    onChange={(e) => { setCardioTracker({ ...cardioTracker, count: Number(e.target.value) }) }} />
-                </Flex>
+              <Divider margin="1em .5em" />
+              <Heading level={5}>Notifications</Heading>
+              <Text><i>You have the option of receiving your workouts via email the day before. Configure the settings below if you'd like to get them.</i></Text>
+              <RadioGroupField label="Contact Type" name="type" direction="row" value={profile.contact.type} onChange={handleContactChange}>
+                <Radio value="email">Email</Radio>
+                <Radio value="none">None</Radio>
+              </RadioGroupField>
+              <TextField label="Email address" name="email" isDisabled={profile.contact.type == "none"} type="email" required value={profile.contact.email} onChange={handleContactChange} />
+              <Flex direction="row" gap="1em">
+                <TextField label="Notification Time" name="time" isDisabled={profile.contact.type == "none"} type="time" required value={profile.contact.time} onChange={handleContactChange} />
+                <SelectField label="Timezone" name="timezone" isDisabled={profile.contact.type == "none"} value={profile.contact.timezone} onChange={(e) => setProfile(prev => ({ ...prev, contact: { ...prev.contact, timezone: e.target.value } }))}>
+                  {timezones.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </SelectField>
               </Flex>
             </Flex>
-            <Button type="submit" onClick={updateProfile}>Save</Button>
+            <Button type="submit" onClick={updateMyProfile}>Save</Button>
           </View>
         </Flex>
         <Image src="https://readysetcloud.s3.amazonaws.com/profile.png" height="15em" borderRadius="50%" alt="man lifting barbell over his head" />

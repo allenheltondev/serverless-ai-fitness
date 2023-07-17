@@ -26,15 +26,33 @@
         "ProcessorConfig": {
           "Mode": "INLINE"
         },
-        "StartAt": "Generate Workout Prompts",
+        "StartAt": "Load User Settings",
         "States": {
+          "Load User Settings": {
+            "Type": "Task",
+            "Resource": "${DynamoDbGetItem}",
+            "Parameters": {
+              "TableName": "${TableName}",
+              "Key": {
+                "pk": {
+                  "S.$": "$.user.pk.S"
+                },
+                "sk": {
+                  "S": "settings"
+                }
+              }
+            },
+            "Next": "Generate Workout Prompts",
+            "ResultPath": "$.settings"
+          },
           "Generate Workout Prompts": {
             "Type": "Task",
             "Resource": "${LambdaInvoke}",
             "Parameters": {
               "FunctionName": "${GetUserWorkoutPrompts}",
               "Payload": {
-                "user.$": "$.user",
+                "profile.$": "$.user",
+                "settings.$": "$.settings.Item",
                 "unmarshall": true
               }
             },
@@ -223,6 +241,7 @@
                   "Parameters": {
                     "user.$": "$.user",
                     "date.$": "$.workout.date",
+                    "notificationDate.$": "$.workout.notificationDate",
                     "muscleGroup.$": "$.workout.muscleGroup",
                     "equipment.$": "$.workout.equipment",
                     "workoutType.$": "$.workout.workoutType",
@@ -261,7 +280,7 @@
                         },
                         "contact": {
                           "type.$": "$.user.contact.M.type.S",
-                          "value.$": "$.user.contact.M.value.S"
+                          "value.$": "$.user.contact.M.email.S"
                         }
                       }
                     }

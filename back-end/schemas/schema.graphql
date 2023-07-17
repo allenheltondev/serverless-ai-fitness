@@ -5,11 +5,12 @@ schema {
 
 type Query {
   getUserWorkout(date: String!): Workout
-  getMyProfile: MyProfile
+  getMyProfile: Profile
 }
 
 type Mutation {
-  updateMyProfile(input: UserDetail!): Boolean
+  updateProfile(input: ProfileInput!): Boolean
+  updateSettings(input: SettingsInput!): Boolean
 }
 
 enum SetType {
@@ -60,75 +61,102 @@ type Workout {
   abs: Abs!
 }
 
-input Contact {
-  type: String!
-  time: String!
-  timezone: String!
-}
-
-input Demographics {
-  firstName: String!
-  lastName: String!
-  dob: String!
-  sex: String!
-}
-
-input Equipment {
+input EquipmentInput {
   type: String!
   threshold: Float!
 }
 
-input SpecialWorkouts {
+input SpecialWorkoutsInput {
   days: [String!]!
   percentChance: Int!
   equipment: [String!]!
   objective: String!
 }
 
-input WorkoutType {
+input WorkoutTypeInput {
   type: SetType!
   modifier: String
 }
 
-input UserDetail {
-  contact: Contact!
-  demographics: Demographics!
-  email: String!
-  equipment: [Equipment!]!
-  objective: String!
-  experienceLevel: String!
-  muscleGroups: [String!]!
-  frequency: [String!]!
-  workoutTypes: [WorkoutType!]!
+input SettingsInput {
+  equipment: [EquipmentInput!]  
+  muscleGroups: [String!]
+  frequency: [String]
+  workoutTypes: [WorkoutTypeInput!]
+  targetTime: Int!
+  specialWorkouts: SpecialWorkoutsInput
+}
+
+input ProfileInput {
+  contact: ContactInput
+  demographics: DemographicsInput  
+  objective: String
+  experienceLevel: String
+}
+
+input ContactInput {
+  type: String!
+  time: String
+  timezone: String
+  email: String
+}
+
+input DemographicsInput {
+  firstName: String
+  lastName: String
+  username: String
+  dob: String
+  sex: String
+  weight: Int
+}
+
+type Settings {
+  equipment: [Equipment!]  
+  muscleGroups: [String!]
+  frequency: [String]
+  workoutTypes: [WorkoutType!]
   targetTime: Int!
   specialWorkouts: SpecialWorkouts
 }
 
-type MyProfile {
-  contact: UserContact
-  demographics: UserDemographics
-  email: String
-  equipment: [UserEquipment]
+type Equipment {
+  type: String!
+  threshold: Float!
+}
+
+type SpecialWorkouts {
+  days: [String!]!
+  percentChance: Int!
+  equipment: [String!]!
+  objective: String!
+}
+
+type WorkoutType {
+  type: SetType!
+  modifier: String
+}
+
+type Profile {
+  contact: Contact
+  demographics: Demographics
   objective: String
   experienceLevel: String
-  muscleGroups: [String]
-  frequency: [String]
-  workoutTypes: [UserWorkoutType]
-  targetTime: Int
-  specialWorkouts: UserSpecialWorkouts
 }
 
-type UserContact {
+type Contact {
   type: String!
-  time: String!
-  timezone: String!
+  time: String
+  timezone: String
+  email: String
 }
 
-type UserDemographics {
+type Demographics {
   firstName: String
   lastName: String
+  username: String
   dob: String
   sex: String
+  weight: Int
 }
 
 type UserEquipment {

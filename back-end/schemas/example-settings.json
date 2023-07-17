@@ -1,0 +1,66 @@
+{
+  "pk": "allen",
+  "sk": "settings",  
+  "equipment": [
+    {
+      "type": "barbells",
+      "threshold": 0.9
+    },
+    {
+      "type": "dumbbells",
+      "threshold": 0.75
+    },
+    {
+      "type": "kettlebells",
+      "threshold": 0.3
+    },
+    {
+      "type": "medicine balls",
+      "threshold": 0.3
+    },
+    {
+      "type": "battle ropes",
+      "threshold": 0.15
+    },
+    {
+      "type": "bodyweight exercises",
+      "threshold": 0.35
+    }
+  ],  
+  "muscleGroups": [
+    "chest",
+    "arm",
+    "shoulder",
+    "back",
+    "leg"
+  ],
+  "frequency": [
+    "M",
+    "T",
+    "W",
+    "Th",
+    "F"
+  ],
+  "workoutTypes": [
+    {
+      "type": "superset",
+      "modifier": "with at least 4 supersets"
+    }
+  ],
+  "targetTime": 45,
+  "specialWorkouts": {
+    "days": [
+      "T",
+      "Th"
+    ],
+    "percentChance": 15,
+    "equipment": [
+      "tractor tire",
+      "5 gallon buckets",
+      "50lb sandbags"
+    ],
+    "objective": "cross training, strength training, and cardio"
+  },
+  "facet": "settings",
+  "facetSortKey": "allen"
+}

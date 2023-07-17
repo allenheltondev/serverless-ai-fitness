@@ -5,15 +5,13 @@ export function request(ctx) {
 
   return {
     operation: "PutItem",
-    key: util.dynamodb.toMapValues({ pk: userId, sk: 'user' }),
+    key: util.dynamodb.toMapValues({ pk: userId, sk: 'settings' }),
     attributeValues: util.dynamodb.toMapValues({
-      ...ctx.args.input,
-      facet: 'user',
-      facetSortKey: userId
+      ...ctx.args.input
     })
   };
 }
 
 export function response(ctx) {
-  return ctx.result ? true : false;
+  return ctx.result ? true: false;
 }
