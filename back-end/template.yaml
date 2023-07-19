@@ -300,6 +300,12 @@ Resources:
             Version: 1.0.0
           DataSource: WorkoutDataSource
           CodeUri: ./resolvers/getProfile.js
+        getSettings:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: WorkoutDataSource
+          CodeUri: ./resolvers/getSettings.js
       Resolvers:
         Query:
           getUserWorkout:
@@ -313,7 +319,13 @@ Resources:
               Name: APPSYNC_JS
               Version: 1.0.0
             Pipeline:
-              - getProfile   
+              - getProfile
+          getMySettings:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getSettings
         Mutation:
           updateProfile:
             Runtime:

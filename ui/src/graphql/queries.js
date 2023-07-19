@@ -22,11 +22,21 @@ export const getMyProfile = `
 `;
 
 export const getWorkoutSettings = `
-  query getWorkoutSettings {
-    getSettings {
+  query getMySettings {
+    getMySettings {
       muscleGroups
       frequency
       targetTime
+      equipment {
+        type
+        threshold
+      }
+      specialWorkouts {
+        days
+        percentChance
+        equipment
+        objective
+      }
     }
   }
 `;

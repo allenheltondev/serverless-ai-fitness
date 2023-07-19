@@ -6,6 +6,7 @@ schema {
 type Query {
   getUserWorkout(date: String!): Workout
   getMyProfile: Profile
+  getMySettings: Settings
 }
 
 type Mutation {
@@ -115,7 +116,7 @@ type Settings {
   muscleGroups: [String!]
   frequency: [String]
   workoutTypes: [WorkoutType!]
-  targetTime: Int!
+  targetTime: Int
   specialWorkouts: SpecialWorkouts
 }
 
