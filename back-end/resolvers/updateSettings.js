@@ -7,7 +7,8 @@ export function request(ctx) {
     operation: "PutItem",
     key: util.dynamodb.toMapValues({ pk: userId, sk: 'settings' }),
     attributeValues: util.dynamodb.toMapValues({
-      ...ctx.args.input
+      ...ctx.args.input,
+      lastUpdated: util.time.nowISO8601()
     })
   };
 }

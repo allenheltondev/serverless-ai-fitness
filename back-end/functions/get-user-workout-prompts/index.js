@@ -31,6 +31,7 @@ exports.handler = async (state) => {
   const workouts = [];
   let muscleGroups = shuffleArray(settings.muscleGroups);
   const currentDate = new Date();
+  currentDate.setUTCDate(date.getUTCDate() - date.getUTCDay());
 
   for (let i = 0; i < 7; i++) {
     const day = days[i];

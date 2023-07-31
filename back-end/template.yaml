@@ -54,24 +54,12 @@ Resources:
         - AttributeName: pk
           AttributeType: S
         - AttributeName: sk
-          AttributeType: S
-        - AttributeName: IsScheduledInFuture
-          AttributeType: S
-        - AttributeName: ScheduledDate
-          AttributeType: S
+          AttributeType: S       
         - AttributeName: facet
           AttributeType: S
         - AttributeName: facetSortKey
           AttributeType: S
-      GlobalSecondaryIndexes:        
-        - IndexName: FutureSchedule
-          KeySchema:
-            - AttributeName: IsScheduledInFuture
-              KeyType: HASH
-            - AttributeName: ScheduledDate
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+      GlobalSecondaryIndexes:
         - IndexName: facets
           KeySchema:
             - AttributeName: facet
@@ -80,6 +68,8 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
 
   SharedLayer:
     Type: AWS::Serverless::LayerVersion
@@ -371,6 +361,37 @@ Resources:
   #     TTL: 300
   #     Type: A
 
+  TableStreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/table-stream
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+            - Effect: Allow
+              Action:
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+              Resource: !Sub ${FitnessTable.Arn}/stream/*
+
+  TableStream:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt FitnessTable.StreamArn
+      FunctionName: !GetAtt TableStreamFunction.Arn
+      StartingPosition: TRIM_HORIZON
+      MaximumBatchingWindowInSeconds: 60
+      BatchSize: 20
+      FilterCriteria:
+        Filters:
+          - Pattern: '{ "dynamodb" : { "Keys" : { "sk" : { "S" : [ "settings" ] } } } }'
+
   GenerateWeeklyScheduleFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -384,115 +405,6 @@ Resources:
       CodeUri: functions/get-user-workout-prompts
       Policies:
         - AWSLambdaBasicExecutionRole
-  
-  FormatWorkoutEmailFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: functions/format-workout-email
-      Policies:
-        - AWSLambdaBasicExecutionRole        
-
-  BuildWeeklyWorkoutsStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      Type: STANDARD
-      DefinitionUri: workflows/build-weekly-workouts.asl.json
-      DefinitionSubstitutions:
-        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
-        DynamodbPutItem: !Sub arn:${AWS::Partition}:states:::dynamodb:putItem
-        EventBridgePutEvents: !Sub arn:${AWS::Partition}:states:::events:putEvents
-        GenerateWeeklyScheduleFunction: !GetAtt GenerateWeeklyScheduleFunction.Arn
-        TableName: !Ref TableName   
-        AdminEmail: !Ref ContactEmail
-        AskChatGPTFunction: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:putItem
-              Resource:
-                - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource:
-                - !GetAtt GenerateWeeklyScheduleFunction.Arn
-                - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
-            - Effect: Allow
-              Action:
-                - events:PutEvents
-              Resource:
-                - !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
-      Events:
-        Trigger:
-          Type: Schedule
-          Properties:
-            Schedule: "cron(0 19 ? * SUN *)"
-
-  SendWorkoutEmailStateMachine:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      Type: EXPRESS
-      DefinitionUri: workflows/send-workout-email.asl.json
-      DefinitionSubstitutions:
-        DynamodbQuery: !Sub arn:${AWS::Partition}:states:::aws-sdk:dynamodb:query
-        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
-        DynamodbUpdateItem: !Sub arn:${AWS::Partition}:states:::dynamodb:updateItem
-        EventBridgePutEvents: !Sub arn:${AWS::Partition}:states:::events:putEvents
-        FormatEmailFunction: !GetAtt FormatWorkoutEmailFunction.Arn
-        TableName: !Ref TableName
-        AdminEmail: !Ref ContactEmail
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:updateItem
-              Resource:
-                - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
-            - Effect: Allow
-              Action:
-                - dynamodb:Query
-              Resource:
-                - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/FutureSchedule
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource:
-                - !GetAtt FormatWorkoutEmailFunction.Arn
-            - Effect: Allow
-              Action:
-                - events:PutEvents
-              Resource:
-                - !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
-            - Effect: Allow
-              Action:
-                - logs:CreateLogDelivery
-                - logs:GetLogDelivery
-                - logs:UpdateLogDelivery
-                - logs:DeleteLogDelivery
-                - logs:ListLogDeliveries
-                - logs:PutResourcePolicy
-                - logs:DescribeResourcePolicies
-                - logs:DescribeLogGroups
-              Resource: "*"
-      Events:
-        Trigger:
-          Type: Schedule
-          Properties:
-            Schedule: "cron(59 23 ? * SUN-THU *)"
-      Logging:
-        Level: ALL
-        IncludeExecutionData: true
-        Destinations:
-          - CloudWatchLogsLogGroup:
-              LogGroupArn: !GetAtt SendWorkoutEmailLogGroup.Arn
-
-  SendWorkoutEmailLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 7
 
   WorkoutApi:
     Type: AWS::Serverless::Api
@@ -655,6 +567,48 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: "cron(0 17 ? * SUN *)"
+
+  BuildUserWorkoutsStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: workflows/build-user-workouts.asl.json
+      DefinitionSubstitutions:
+        DynamoDbGetItem: !Sub arn:${AWS::Partition}:states:::dynamodb:getItem
+        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
+        GetUserWorkoutPrompts: !GetAtt GetUserWorkoutPromptsFunction.Arn
+        AskChatGPT: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
+        SendWorkoutNotification: !Ref SendWorkoutNotificationStateMachine
+        SendWorkoutNotificationRole: !GetAtt SendNotificationSchedulerRole.Arn
+        SchedulerCreateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:createSchedule
+        SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
+        TableName: !Ref TableName
+      Policies:
+        - Version: 2012-10-17
+          Statement:            
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource:
+                - !GetAtt GetUserWorkoutPromptsFunction.Arn
+                - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
+                - !GetAtt SaveToDynamoDBFunction.Arn
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: !GetAtt SendNotificationSchedulerRole.Arn
+            - Effect: Allow
+              Action: scheduler:CreateSchedule
+              Resource: !Sub arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/aifitness/WORKOUT*
+      Events:
+        ScheduledPostEvent:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aifitness
+              detail-type:
+                - Generate User Workout
 
   SendNotificationSchedulerRole:
     Type: AWS::IAM::Role
