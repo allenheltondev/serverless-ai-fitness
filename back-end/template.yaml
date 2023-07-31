@@ -282,6 +282,12 @@ Resources:
             Version: 1.0.0
           DataSource: WorkoutDataSource
           CodeUri: ./resolvers/getWorkout.js
+        getWorkoutRange:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: WorkoutDataSource
+          CodeUri: ./resolvers/getWorkoutRange.js
         updateProfile:
           Runtime:
             Name: APPSYNC_JS
@@ -314,6 +320,12 @@ Resources:
               Version: 1.0.0
             Pipeline:
               - getWorkout
+          getWorkoutList:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getWorkoutRange
           getMyProfile:
             Runtime:
               Name: APPSYNC_JS

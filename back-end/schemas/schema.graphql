@@ -5,6 +5,7 @@ schema {
 
 type Query {
   getUserWorkout(date: String!): Workout
+  getWorkoutList(date: String!): WorkoutRange
   getMyProfile: Profile
   getMySettings: Settings
 }
@@ -12,13 +13,6 @@ type Query {
 type Mutation {
   updateProfile(input: ProfileInput!): Boolean
   updateSettings(input: SettingsInput!): Boolean
-}
-
-enum SetType {
-  circuit
-  supersets
-  special_workout
-  standard
 }
 
 type Exercise {
@@ -33,7 +27,7 @@ type Set {
 
 type MainSet {
   numSets: Int!
-  setType: SetType!
+  setType: String!
   sets: [Set!]!
 }
 
@@ -56,7 +50,26 @@ type Abs {
   exercises: [AbsExercise!]!
 }
 
+type WorkoutRange {
+  workouts: [WorkoutSummary]
+}
+
+type WorkoutSummary {
+  muscleGroup: String
+  equipment: String
+  date: String
+  workoutType: String
+}
+
 type Workout {
+  workout: WorkoutDetail
+  muscleGroup: String
+  equipment: String
+  date: String
+  workoutType: String
+}
+
+type WorkoutDetail {
   mainSet: MainSet!
   warmup: Warmup!
   abs: Abs!
@@ -75,7 +88,7 @@ input SpecialWorkoutsInput {
 }
 
 input WorkoutTypeInput {
-  type: SetType!
+  type: String!
   modifier: String
 }
 
@@ -133,7 +146,7 @@ type SpecialWorkouts {
 }
 
 type WorkoutType {
-  type: SetType!
+  type: String!
   modifier: String
 }
 
@@ -166,7 +179,7 @@ type UserEquipment {
 }
 
 type UserWorkoutType {
-  type: SetType!
+  type: String!
   modifier: String
 }
 

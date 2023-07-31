@@ -27,6 +27,10 @@ export const getWorkoutSettings = `
       muscleGroups
       frequency
       targetTime
+      workoutTypes {
+        type
+        modifier
+      }
       equipment {
         type
         threshold
@@ -36,6 +40,52 @@ export const getWorkoutSettings = `
         percentChance
         equipment
         objective
+      }
+    }
+  }
+`;
+
+export const getWorkout = `
+  query getUserWorkout($date: String!) {
+    getUserWorkout(date: $date) {
+      workout {
+        warmup {
+          exercises {
+            name
+            numReps
+          }
+        }
+        mainSet {
+          numSets
+          setType
+          sets {
+            numReps
+            exercises {
+              name            
+            }
+          }
+        }
+        abs {
+          numSets
+          exercises {
+            name
+            numReps
+          }
+        }
+      }
+    }
+  }
+`;
+
+
+export const getWorkoutList = `
+  query getWorkoutList($date: String!) {
+    getWorkoutList(date: $date) {
+      workouts {
+        muscleGroup
+        equipment
+        date
+        workoutType
       }
     }
   }

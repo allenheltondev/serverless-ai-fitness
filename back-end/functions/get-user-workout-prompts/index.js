@@ -13,7 +13,7 @@ const SETTINGS_DEFAULTS = {
   targetTime: 30,
   workoutTypes: [{ type: 'circuit' }],
   frequency: ['M', 'W', 'F'],
-  muscleGroups: ['total body', 'total body', 'total body']
+  muscleGroups: ['total body']
 };
 
 exports.handler = async (state) => {
@@ -29,13 +29,17 @@ exports.handler = async (state) => {
 
   const days = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
   const workouts = [];
-  const muscleGroups = shuffleArray(settings.muscleGroups);
+  let muscleGroups = shuffleArray(settings.muscleGroups);
   const currentDate = new Date();
 
   for (let i = 0; i < 7; i++) {
     const day = days[i];
     if (settings.frequency.includes(day)) {
-      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel, profile.objective, settings.workoutTypes, muscleGroups.pop(), settings.targetTime, settings.specialWorkouts);
+      const muscleGroup = muscleGroups.pop();
+      if(!muscleGroups.length){
+        muscleGroups = shuffleArray(settings.muscleGroups);
+      }
+      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel, profile.objective, settings.workoutTypes, muscleGroup, settings.targetTime, settings.specialWorkouts);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
@@ -77,7 +81,7 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
   return workout;
 };
 
-const isSpecialWorkoutDay = (specialWorkouts, day) => specialWorkouts.days.find(d => d == day);
+const isSpecialWorkoutDay = (specialWorkouts, day) => specialWorkouts?.days.find(d => d == day);
 
 const getEquipment = (equipment) => {
   if (!equipment || equipment.length === 0) {

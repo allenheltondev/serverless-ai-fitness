@@ -13,9 +13,10 @@ export const config = {
         'openid',
         //'aws.cognito.signin.user.admin'
       ],
-      redirectSignIn: 'http://localhost:3000',
-      redirectSignOut: 'http://localhost:3000/',
-      responseType: 'code'
+      redirectSignIn: process.env.NEXT_PUBLIC_redirect,
+      redirectSignOut: 'https://readysetcloud.io',
+      responseType: 'code',
+      redirect_uri: process.env.NEXT_PUBLIC_redirect
     }
 	},  
 	aws_appsync_graphqlEndpoint: process.env.NEXT_PUBLIC_appSyncURL,
