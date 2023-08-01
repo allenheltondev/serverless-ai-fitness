@@ -6,6 +6,7 @@ import { CgProfile, CgCalendar } from 'react-icons/cg';
 import { useRouter } from 'next/router';
 import { CognitoHostedUIIdentityProvider } from '@aws-amplify/auth/lib/types';
 import { config } from '../config';
+import { isMobile } from 'react-device-detect';
 Amplify.configure(config);
 
 
@@ -49,9 +50,9 @@ const TitleBar = ({ showMenu }) => {
               </MenuItem>
             </Menu>
           )}
-          <Link href="https://readysetcloud.io"><Image maxHeight="1.5em" height="auto" maxWidth="100%" src="https://www.readysetcloud.io/images/logo.png" alt="Ready, Set, Cloud logo" /></Link>
+          <Link href="https://readysetcloud.io"><Image marginTop={".5em"} maxHeight="1.5em" height="auto" maxWidth="100%" src="https://www.readysetcloud.io/images/logo.png" alt="Ready, Set, Cloud logo" /></Link>
         </Flex>
-        {isSignedIn ? <Button variation="link" onClick={(() => Auth.signOut())}>Sign Out</Button> : <Button variation="menu" onClick={() => Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google })}>Sign In</Button>}
+        {isSignedIn ? <Button variation="link" onClick={(() => Auth.signOut())} padding={isMobile ? "0em": ""}>Sign Out</Button> : <Button variation="menu" onClick={() => Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google })}>Sign In</Button>}
       </Flex>
       <hr color="lightgray" />
     </>

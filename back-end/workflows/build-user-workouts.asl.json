@@ -1,7 +1,34 @@
 {
   "Comment": "Generates all workouts for users in a given week",
-  "StartAt": "Load User Settings",
-  "States": {    
+  "StartAt": "Triggered From Event?",
+  "States": {
+    "Triggered From Event?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.detail.userId",
+          "IsPresent": true,
+          "Next": "Move userId Up"
+        },
+        {
+          "Variable": "$.userId",
+          "IsPresent": true,
+          "Next": "Load User Settings"
+        }
+      ],
+      "Default": "userId Not Present"
+    },
+    "userId Not Present": {
+      "Type": "Fail",
+      "Error": "userIdMissing"
+    },
+    "Move userId Up": {
+      "Type": "Pass",
+      "Parameters": {
+        "userId.$": "$.detail.userId"
+      },
+      "Next": "Load User Settings"
+    },
     "Load User Settings": {
       "Type": "Task",
       "Resource": "${DynamoDbGetItem}",

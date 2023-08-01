@@ -54,7 +54,7 @@ const saveSettingsRecord = async (userId) => {
         threshold: 1
       }],
       frequency: ['M', 'W', 'F'],
-      muscleGroups: ['total body', 'total body', 'total body'],
+      muscleGroups: ['total body'],
       targetTime: 30
     })
   }));
