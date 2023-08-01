@@ -532,36 +532,18 @@ Resources:
       DefinitionUri: workflows/generate-user-workouts.asl.json
       DefinitionSubstitutions:
         DynamoDbQuery: !Sub arn:${AWS::Partition}:states:::aws-sdk:dynamodb:query
-        DynamoDbGetItem: !Sub arn:${AWS::Partition}:states:::dynamodb:getItem
-        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
-        GetUserWorkoutPrompts: !GetAtt GetUserWorkoutPromptsFunction.Arn
-        AskChatGPT: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
-        SendWorkoutNotification: !Ref SendWorkoutNotificationStateMachine
-        SendWorkoutNotificationRole: !GetAtt SendNotificationSchedulerRole.Arn
-        SchedulerCreateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:createSchedule
-        SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
+        SFNStartExecution: !Sub arn:${AWS::Partition}:states:::states:startExecution
+        BuildUserWorkoutsStateMachine: !Ref BuildUserWorkoutsStateMachine     
         TableName: !Ref TableName
       Policies:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
               Action: dynamodb:Query
-              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/facets
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/facets            
             - Effect: Allow
-              Action: dynamodb:GetItem
-              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
-            - Effect: Allow
-              Action: lambda:InvokeFunction
-              Resource:
-                - !GetAtt GetUserWorkoutPromptsFunction.Arn
-                - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
-                - !GetAtt SaveToDynamoDBFunction.Arn
-            - Effect: Allow
-              Action: iam:PassRole
-              Resource: !GetAtt SendNotificationSchedulerRole.Arn
-            - Effect: Allow
-              Action: scheduler:CreateSchedule
-              Resource: !Sub arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/aifitness/WORKOUT*
+              Action: states:StartExecution
+              Resource: !Ref BuildUserWorkoutsStateMachine
       Events:
         Trigger:
           Type: Schedule
