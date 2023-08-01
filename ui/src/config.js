@@ -14,7 +14,7 @@ export const config = {
         //'aws.cognito.signin.user.admin'
       ],
       redirectSignIn: process.env.NEXT_PUBLIC_redirect,
-      redirectSignOut: 'https://readysetcloud.io',
+      redirectSignOut: 'https://fitness.readysetcloud.io',
       responseType: 'code',
       redirect_uri: process.env.NEXT_PUBLIC_redirect
     }

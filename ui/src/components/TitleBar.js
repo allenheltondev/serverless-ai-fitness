@@ -30,7 +30,7 @@ const TitleBar = ({ showMenu }) => {
     <>
       <Flex justifyContent="space-between" alignItems="center" padding="1rem">
         <Flex direction="row" gap="1em" alignItems="center" justifyContent="center">
-          {showMenu && (
+          {(showMenu && isSignedIn) && (
             <Menu menuAlign="start">
               <MenuItem onClick={(() => router.push('/'))}>
                 <GiWeightLiftingUp color="black" />
@@ -52,7 +52,7 @@ const TitleBar = ({ showMenu }) => {
           )}
           <Link href="https://readysetcloud.io"><Image marginTop={".5em"} maxHeight="1.5em" height="auto" maxWidth="100%" src="https://www.readysetcloud.io/images/logo.png" alt="Ready, Set, Cloud logo" /></Link>
         </Flex>
-        {isSignedIn ? <Button variation="link" onClick={(() => Auth.signOut())} padding={isMobile ? "0em": ""}>Sign Out</Button> : <Button variation="menu" onClick={() => Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google })}>Sign In</Button>}
+        {isSignedIn ? <Button variation="link" onClick={(() => Auth.signOut())} padding={isMobile ? "0em": ""}>Sign Out</Button> : <Button variation="menu" padding={isMobile ? "0em": ""} onClick={() => Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google })}>Sign In</Button>}
       </Flex>
       <hr color="lightgray" />
     </>

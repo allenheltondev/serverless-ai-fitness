@@ -56,7 +56,7 @@
             "S.$": "$.userId"
           },
           "sk": {
-            "S": "profile"
+            "S": "user"
           }
         }
       },
@@ -257,7 +257,7 @@
             "Type": "Pass",
             "Next": "Should Send Notification?",
             "Parameters": {
-              "user.$": "$.profile.Item",
+              "user.$": "$.user",
               "date.$": "$.workout.date",
               "notificationDate.$": "$.workout.notificationDate",
               "muscleGroup.$": "$.workout.muscleGroup",
@@ -285,7 +285,7 @@
                 "Mode": "OFF"
               },
               "GroupName": "aifitness",
-              "Name.$": "States.Format('WORKOUT-{}-{}',$.userId, $.date)",
+              "Name.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)",
               "ScheduleExpression.$": "States.Format('at({})', $.notificationDate)",
               "ScheduleExpressionTimezone.$": "$.user.contact.M.timezone.S",
               "Target": {
@@ -293,7 +293,7 @@
                 "RoleArn": "${SendWorkoutNotificationRole}",
                 "Input": {
                   "key": {
-                    "pk.$": "States.Format('{}#{}', $.userId, $.date)",
+                    "pk.$": "States.Format('{}#{}', $.user.pk.S, $.date)",
                     "sk": "workout"
                   },
                   "contact": {
@@ -313,16 +313,16 @@
               "FunctionName": "${SaveToDynamoDB}",
               "Payload": {
                 "item": {
-                  "pk.$": "States.Format('{}#{}', $.userId, $.date)",
+                  "pk.$": "States.Format('{}#{}', $.user.pk.S, $.date)",
                   "sk": "workout",
-                  "facet.$": "$.userId",
+                  "facet.$": "$.user.pk.S",
                   "facetSortKey.$": "States.Format('workout#{}', $.date)",
                   "date.$": "$.date",
                   "muscleGroup.$": "$.muscleGroup",
                   "equipment.$": "$.equipment",
                   "workoutType.$": "$.workoutType",
                   "workout.$": "$.workout",
-                  "scheduleName.$": "States.Format('WORKOUT-{}-{}',$.userId, $.date)"
+                  "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)"
                 }
               }
             },
@@ -346,7 +346,7 @@
       },
       "ItemsPath": "$.workouts.Payload",
       "ItemSelector": {
-        "user.$": "$.user",
+        "user.$": "$.profile.Item",
         "workout.$": "$$.Map.Item.Value"
       },
       "End": true

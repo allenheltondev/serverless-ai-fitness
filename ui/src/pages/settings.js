@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { API } from 'aws-amplify';
-import { Text, ToggleButton, Button, CheckboxField, View, Flex, Heading, Image, Divider, SliderField } from '@aws-amplify/ui-react';
+import { Text, ToggleButton, Button, View, Flex, Heading, Divider, SliderField } from '@aws-amplify/ui-react';
 import { getWorkoutSettings } from '../graphql/queries';
 import { updateSettings } from '../graphql/mutations';
 import Head from 'next/head';
 import { Tooltip } from 'react-tooltip';
 import { toast } from 'react-toastify';
 import { isMobile } from 'react-device-detect';
+import { FiThumbsUp } from 'react-icons/fi';
 import muscleGroupList from '../../lib/MuscleGroups';
 import workoutTypes from '../../lib/WorkoutTypes';
 import equipment from '../../lib/Equipment';
@@ -123,6 +124,8 @@ const SettingsPage = () => {
       </Head>
       <Flex direction="column">
         <Heading level={4}>Workout Settings</Heading>
+        <Text fontSize=".9rem"><i>Changes to your settings will update your workouts. Your workouts will regenerate one time a day when you make updates.
+          If you're missing workouts on your calendar, you're in the right spot!</i></Text>
         <Flex direction="column" gap="1em">
           <SliderField
             name="targetTime"
