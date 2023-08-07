@@ -302,6 +302,12 @@ Resources:
             Version: 1.0.0
           DataSource: WorkoutDataSource
           CodeUri: ./resolvers/getSettings.js
+        checkIsConfigured:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: WorkoutDataSource
+          CodeUri: ./resolvers/isUserConfigured.js
       Resolvers:
         Query:
           getUserWorkout:
@@ -328,6 +334,12 @@ Resources:
               Version: 1.0.0
             Pipeline:
               - getSettings
+          isUserConfigured:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - checkIsConfigured
         Mutation:
           updateProfile:
             Runtime:

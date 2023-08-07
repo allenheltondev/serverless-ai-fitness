@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Authenticator, Card, Heading, Text, Flex, Loader, Divider, Link } from '@aws-amplify/ui-react';
+import { Authenticator, Card, Heading, Text, Flex, Loader, Divider, Link, Alert } from '@aws-amplify/ui-react';
 import { getWorkoutList } from '../graphql/queries';
 import { API } from 'aws-amplify';
 import muscleGroupList from '../../lib/MuscleGroups';
+import workoutTypes from '../../lib/WorkoutTypes';
 
 const CalendarPage = ({ signout, user }) => {
   const router = useRouter();
@@ -84,6 +85,9 @@ const CalendarPage = ({ signout, user }) => {
           <Head>
             <title>Calendar | Ready, Set, Cloud Fitness!</title>
           </Head>
+          <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
+            <Heading level={5} color="white">Workouts This Week</Heading>
+          </Alert>
           <Flex direction="row" gap="0em" wrap="wrap">
             {calendar.map(day => (
               <Card variation="outlined" key={day.date.toISOString()} flex={1}>
@@ -92,7 +96,7 @@ const CalendarPage = ({ signout, user }) => {
                   <Divider size="small" />
                   {day.workout && (
                     <Flex direction="column" gap=".5em" maxWidth="10em" onClick={() => router.push(`/?date=${day.workout.date}`)} style={{ cursor: "pointer" }}>
-                      <Text>{muscleGroupList.find(mg => mg.value == day.workout.muscleGroup).name} - {day.workout.workoutType}</Text>
+                      <Text>{muscleGroupList.find(mg => mg.value == day.workout.muscleGroup).name} - {workoutTypes.find(wt => wt.value == day.workout.workoutType)?.name}</Text>
                       <Text fontSize=".9rem"><i>{day.workout.equipment}</i></Text>
                     </Flex>
                   )}
@@ -100,8 +104,8 @@ const CalendarPage = ({ signout, user }) => {
               </Card>
             ))}
           </Flex>
-          <Text textAlign="center"><i>If you don't see anything here, try <Link href="/settings">updating your settings</Link>. 
-          Once your setup is complete, allow a couple of minutes for your workouts to be created.</i></Text>
+          <Text textAlign="center"><i>If you don't see anything here, try <Link href="/settings">updating your settings</Link>.
+            Once your setup is complete, allow a couple of minutes for your workouts to be created.</i></Text>
         </Flex>
       )}
     </Authenticator>

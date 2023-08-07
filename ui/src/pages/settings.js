@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { API } from 'aws-amplify';
-import { Text, ToggleButton, Button, View, Flex, Heading, Divider, SliderField } from '@aws-amplify/ui-react';
+import { Text, ToggleButton, Button, Flex, Heading, Divider, SliderField, Alert } from '@aws-amplify/ui-react';
 import { getWorkoutSettings } from '../graphql/queries';
 import { updateSettings } from '../graphql/mutations';
 import Head from 'next/head';
 import { Tooltip } from 'react-tooltip';
 import { toast } from 'react-toastify';
 import { isMobile } from 'react-device-detect';
-import { FiThumbsUp } from 'react-icons/fi';
 import muscleGroupList from '../../lib/MuscleGroups';
 import workoutTypes from '../../lib/WorkoutTypes';
 import equipment from '../../lib/Equipment';
@@ -83,19 +82,18 @@ const SettingsPage = () => {
 
   const updateWorkoutTypes = (workoutType) => {
     const wt = [...settings?.workoutTypes ?? []];
-    const index = wt.indexOf(w => wt.type == workoutType);
+    const index = wt.findIndex(w => w.type == workoutType);
     if (index > -1) {
       wt.splice(index, 1);
     } else {
       wt.push({ type: workoutType, modifier: '' });
     }
-
     setSettings((prev) => ({ ...prev, workoutTypes: wt }));
   };
 
   const updateEquipment = (equipment) => {
     const e = [...settings?.equipment ?? []];
-    const index = e.indexOf(eq => eq.type == equipment);
+    const index = e.findIndex(eq => eq.type == equipment);
     if (index > -1) {
       e.splice(index, 1);
     } else {
@@ -107,7 +105,7 @@ const SettingsPage = () => {
 
   const updateDaysOfTheWeek = (day) => {
     const days = [...settings.frequency];
-    const index = days.indexOf(day);
+    const index = days.findIndex(d => d == day);
     if (index > -1) {
       days.splice(index, 1);
     } else {
@@ -123,9 +121,12 @@ const SettingsPage = () => {
         <title>Settings | Ready, Set, Cloud Fitness!</title>
       </Head>
       <Flex direction="column">
-        <Heading level={4}>Workout Settings</Heading>
-        <Text fontSize=".9rem"><i>Changes to your settings will update your workouts. Your workouts will regenerate one time a day when you make updates.
-          If you're missing workouts on your calendar, you're in the right spot!</i></Text>
+        <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
+          <Heading level={5} color="white">Workout Settings</Heading>
+          <Text fontSize=".9rem" color="white" marginTop=".4em">
+            <i> Your workouts will regenerate one time a day when you make updates.
+            If you're missing workouts on your calendar, you're in the right spot!</i></Text>
+        </Alert>
         <Flex direction="column" gap="1em">
           <SliderField
             name="targetTime"
@@ -163,7 +164,7 @@ const SettingsPage = () => {
                 borderRadius='large'
                 width="fit-content"
                 size={isMobile ? "small" : ""}
-                isPressed={settings.workoutTypes?.find(type => type.type == wt.value)}
+                isPressed={settings.workoutTypes?.find(type => type.type == wt.value) != undefined}
                 data-tooltip-id={wt.value + '-tooltip'}
                 onClick={() => updateWorkoutTypes(wt.value)}
               >{wt.name}
@@ -198,7 +199,7 @@ const SettingsPage = () => {
                 borderRadius='large'
                 width="fit-content"
                 size={isMobile ? "small" : ""}
-                isPressed={settings.equipment.find(eq => eq.type == e.value)}
+                isPressed={settings.equipment.find(eq => eq.type == e.value) != undefined}
                 onClick={() => updateEquipment(e.value)}
               >{e.name}</ToggleButton>
             ))}

@@ -48,6 +48,10 @@ export const getWorkoutSettings = `
 export const getWorkout = `
   query getUserWorkout($date: String!) {
     getUserWorkout(date: $date) {
+      muscleGroup
+      date
+      equipment
+      workoutType
       workout {
         warmup {
           exercises {
@@ -88,5 +92,11 @@ export const getWorkoutList = `
         workoutType
       }
     }
+  }
+`;
+
+export const isConfigured = `
+  query isUserConfigured {
+    isUserConfigured 
   }
 `;

@@ -8,7 +8,8 @@ export function request(ctx) {
     key: util.dynamodb.toMapValues({ pk: userId, sk: 'settings' }),
     attributeValues: util.dynamodb.toMapValues({
       ...ctx.args.input,
-      lastUpdated: util.time.nowISO8601()
+      lastUpdated: util.time.nowISO8601(),
+      isConfigured: true
     })
   };
 }

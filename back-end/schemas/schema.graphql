@@ -8,6 +8,7 @@ type Query {
   getWorkoutList(date: String!): WorkoutRange
   getMyProfile: Profile
   getMySettings: Settings
+  isUserConfigured: Boolean
 }
 
 type Mutation {

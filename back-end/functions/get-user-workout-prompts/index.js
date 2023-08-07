@@ -89,23 +89,12 @@ const getEquipment = (equipment) => {
     return ['bodyweight'];
   }
 
-  const selectedEquipment = [];
   const shuffledEquipment = [...equipment].sort(() => 0.5 - Math.random());
-  const numberOfEquipment = Math.floor(Math.random() * 3) + 1;
+  const numberOfEquipment = Math.min(Math.floor(Math.random() * 3) + 1, shuffledEquipment.length);
 
-  while (selectedEquipment.length < numberOfEquipment && shuffledEquipment.length > 0) {
-    const randomNumber = Math.random();
-    const equipmentIndex = shuffledEquipment.findIndex(item => randomNumber <= item.threshold);
-
-    if (equipmentIndex !== -1) {
-      const equipment = shuffledEquipment[equipmentIndex];
-      selectedEquipment.push(equipment);
-      shuffledEquipment.splice(equipmentIndex, 1);
-    }
-  }
-
-  return selectedEquipment.map(item => item.type);
+  return shuffledEquipment.slice(0, numberOfEquipment).map(item => item.type);
 };
+
 
 const shuffleArray = array => {
   for (let i = array.length - 1; i > 0; i--) {

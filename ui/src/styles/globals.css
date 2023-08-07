@@ -94,6 +94,10 @@ a {
   text-decoration: none;
 }
 
+.amplify-expander__header {
+  color: rgb(49, 49, 49) !important;
+}
+
 @media (prefers-color-scheme: light) {
   html {
     color-scheme: dark;
