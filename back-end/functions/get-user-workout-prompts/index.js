@@ -29,7 +29,7 @@ exports.handler = async (state) => {
 
   const days = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
   const workouts = [];
-  let muscleGroups = shuffleArray(settings.muscleGroups);
+  let muscleGroups = shuffleArray([...settings.muscleGroups]);
   const currentDate = new Date();
   currentDate.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay());
 
@@ -37,10 +37,10 @@ exports.handler = async (state) => {
     const day = days[i];
     if (settings.frequency.includes(day)) {
       const muscleGroup = muscleGroups.pop();
-      if(!muscleGroups.length){
-        muscleGroups = shuffleArray(settings.muscleGroups);
+      if (!muscleGroups.length) {
+        muscleGroups = shuffleArray([...settings.muscleGroups]);
       }
-      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel, profile.objective, settings.workoutTypes, muscleGroup, settings.targetTime, settings.specialWorkouts);
+      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel, profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime, settings.specialWorkouts);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
@@ -48,6 +48,17 @@ exports.handler = async (state) => {
       const notificationDate = new Date(date);
       notificationDate.setDate(notificationDate.getDate() - 1);
       workout.notificationDate = `${notificationDate.toISOString().split('T')[0]}T${profile.contact.time}:00`;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set time to midnight
+
+      notificationDate.setHours(0, 0, 0, 0); // Set time to midnight
+      if (notificationDate.getTime() >= currentDate.getTime()) {
+        workout.canSendNotification = true;
+      } else {
+        workout.canSendNotification = false;
+      }
+
       workouts.push(workout);
     }
   }
@@ -76,8 +87,8 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
 
   workout.prompt = `Create a ${workout.workoutType?.type || ''} workout ${workout.workoutType?.modifier || ''} for ` +
     `${workout.objective} ${workout.workoutType ? 'targeting the ' + workout.muscleGroup : ''} using ${workout.equipment.join(', ')}.` +
-    ` It should be a ${workout.experienceLevel}-level workout that takes around ${workout.targetTime} minutes to complete the main set. ` +
-    `Also create a dynamic warmup with 6 or more related exercises for this workout and an ab set for afterward.`;
+    ` It should be a ${workout.experienceLevel}-level workout that takes ${workout.targetTime} minutes to complete the main set. ` +
+    `Also create a dynamic warmup with 6 or more related exercises for this workout and an ab set with related moves for afterward.`;
 
   return workout;
 };
@@ -108,9 +119,11 @@ const formatWorkout = (workout) => {
   return {
     date: workout.date.split('T')[0],
     notificationDate: workout.notificationDate,
+    canSendNotification: workout.canSendNotification,
     muscleGroup: workout.muscleGroup,
     equipment: workout.equipment.join(', '),
     workoutType: workout.workoutType?.type || 'special workout',
-    prompt: workout.prompt
+    prompt: workout.prompt,
+    targetTime: workout.targetTime
   };
 };

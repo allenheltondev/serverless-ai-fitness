@@ -18,6 +18,8 @@ const HelpPage = () => {
             If you're brand new, welcome! After you first sign up, you'll need to configure your <Link href="/settings">settings</Link> and <Link href="/profile">profile</Link>. 
             After you finish filling out your settings, workouts will be automatically generated for the week. 
             You can view the whole week on your <Link href="/calendar">calendar</Link>, or check out today's workout on the <Link href="/">homepage</Link>.
+            <br/><br/>
+            You are also welcome to <Link href="/workouts">browse workouts</Link> and see what tickles your fancy.
           </ExpanderItem>
           <ExpanderItem title="Where are my workouts?" value="where-are-my-workouts">
             Did you expect to see a workout today but it's not there? Chances are you need to <Link href="/settings">configure your settings</Link>. 
@@ -25,6 +27,8 @@ const HelpPage = () => {
             When you save your settings, the workouts for the week will be generated for you automatically. But please note - 
             <i>workouts will only be generated one time per day.</i> You can save your settings as many times as you want, but it will only trigger
             workouts to be created for you one time.
+            <br/> <br/>
+            If you don't have anything for today, or nothing is showing up and you expect it to, you can always pick a workout from the <Link href="/workouts">workout database</Link>.
           </ExpanderItem>
           <ExpanderItem title="How does this work?" value="how-does-this-work">
             Workout programs are hard. They usually rely on specialty coaches and expensive gym equipment. They also don't usually tailor to your exact preferences.

@@ -6,6 +6,8 @@ schema {
 type Query {
   getUserWorkout(date: String!): Workout
   getWorkoutList(date: String!): WorkoutRange
+  getWorkoutArchive(muscleGroup: String!, nextToken: String): PaginatedWorkouts
+  getWorkoutById(id: String!): Workout
   getMyProfile: Profile
   getMySettings: Settings
   isUserConfigured: Boolean
@@ -14,6 +16,19 @@ type Query {
 type Mutation {
   updateProfile(input: ProfileInput!): Boolean
   updateSettings(input: SettingsInput!): Boolean
+}
+
+type PaginatedWorkouts {
+  nextToken: String
+  workouts: [PaginatedWorkout]
+}
+
+type PaginatedWorkout {
+  muscleGroup: String
+  equipment: String
+  workoutType: String
+  estimatedTime: Int
+  workoutId: String
 }
 
 type Exercise {
@@ -68,6 +83,7 @@ type Workout {
   equipment: String
   date: String
   workoutType: String
+  type: String
 }
 
 type WorkoutDetail {

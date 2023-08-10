@@ -132,6 +132,7 @@ const SettingsPage = () => {
             name="targetTime"
             label="Preferred workout length (mins)"
             value={settings.targetTime}
+            step={5}
             min={15}
             max={90}
             maxWidth={"25em"}

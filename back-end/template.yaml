@@ -59,6 +59,10 @@ Resources:
           AttributeType: S
         - AttributeName: facetSortKey
           AttributeType: S
+        - AttributeName: listType
+          AttributeType: S
+        - AttributeName: listSort
+          AttributeType: S
       GlobalSecondaryIndexes:
         - IndexName: facets
           KeySchema:
@@ -68,8 +72,51 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
+        - IndexName: encyclopedia
+          KeySchema: 
+            - AttributeName: listType
+              KeyType: HASH
+            - AttributeName: listSort
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
+
+  FitnessEncyclopediaTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST      
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S       
+        - AttributeName: listType
+          AttributeType: S
+        - AttributeName: listSort
+          AttributeType: S
+      GlobalSecondaryIndexes:
+        - IndexName: list
+          KeySchema:
+            - AttributeName: listType
+              KeyType: HASH
+            - AttributeName: listSort
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - muscleGroup
+              - equipment
+              - estimatedTime
+              - type
+              - rating
+              - difficulty
 
   SharedLayer:
     Type: AWS::Serverless::LayerVersion
@@ -265,6 +312,9 @@ Resources:
           WorkoutDataSource:
             TableName: !Ref TableName
             TableArn: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+          EncyclopediaDataSource:
+            TableName: !Ref FitnessEncyclopediaTable
+            TableArn: !GetAtt FitnessEncyclopediaTable.Arn
       Functions:       
         getWorkout:
           Runtime:
@@ -278,6 +328,18 @@ Resources:
             Version: 1.0.0
           DataSource: WorkoutDataSource
           CodeUri: ./resolvers/getWorkoutRange.js
+        getWorkoutArchiveFunction:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: WorkoutDataSource
+          CodeUri: ./resolvers/getWorkoutArchive.js
+        getWorkoutByIdFunction:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: EncyclopediaDataSource
+          CodeUri: ./resolvers/getWorkoutById.js
         updateProfile:
           Runtime:
             Name: APPSYNC_JS
@@ -334,12 +396,24 @@ Resources:
               Version: 1.0.0
             Pipeline:
               - getSettings
+          getWorkoutById:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getWorkoutByIdFunction
           isUserConfigured:
             Runtime:
               Name: APPSYNC_JS
               Version: 1.0.0
             Pipeline:
               - checkIsConfigured
+          getWorkoutArchive:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getWorkoutArchiveFunction
         Mutation:
           updateProfile:
             Runtime:
@@ -574,6 +648,8 @@ Resources:
         SendWorkoutNotification: !Ref SendWorkoutNotificationStateMachine
         SendWorkoutNotificationRole: !GetAtt SendNotificationSchedulerRole.Arn
         SchedulerCreateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:createSchedule
+        SchedulerGetSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:getSchedule
+        SchedulerUpdateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:updateSchedule
         SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
         TableName: !Ref TableName
       Policies:
@@ -592,7 +668,10 @@ Resources:
               Action: iam:PassRole
               Resource: !GetAtt SendNotificationSchedulerRole.Arn
             - Effect: Allow
-              Action: scheduler:CreateSchedule
+              Action: 
+                - scheduler:CreateSchedule
+                - scheduler:GetSchedule
+                - scheduler:UpdateSchedule
               Resource: !Sub arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/aifitness/WORKOUT*
       Events:
         ScheduledPostEvent:

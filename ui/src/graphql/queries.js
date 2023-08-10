@@ -100,3 +100,53 @@ export const isConfigured = `
     isUserConfigured 
   }
 `;
+
+export const getArchive = `
+  query getWorkoutArchive($muscleGroup: String!){
+    getWorkoutArchive(muscleGroup: $muscleGroup) {
+      nextToken
+      workouts {
+        muscleGroup
+        equipment
+        estimatedTime
+        workoutType
+        workoutId
+      }
+    }
+  }
+`;
+
+export const getWorkoutById = `
+  query getWorkoutById($id: String!){
+    getWorkoutById(id: $id) {
+      muscleGroup
+      equipment
+      type
+      workout {
+        warmup {
+          exercises {
+            name
+            numReps
+          }
+        }
+        mainSet {
+          numSets
+          setType
+          sets {
+            numReps
+            exercises {
+              name            
+            }
+          }
+        }
+        abs {
+          numSets
+          exercises {
+            name
+            numReps
+          }
+        }
+      }
+    }
+  }
+`

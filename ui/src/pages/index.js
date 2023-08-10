@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Authenticator, Card, Heading, Text, Flex, View, Loader, Image, Alert, Link } from '@aws-amplify/ui-react';
+import { Authenticator, Heading, Text, Flex, Loader, Image, Alert, Link } from '@aws-amplify/ui-react';
 import { getWorkout, isConfigured } from '../graphql/queries';
 import { API } from 'aws-amplify';
-import equipment from '../../lib/Equipment';
-import workoutTypes from '../../lib/WorkoutTypes';
+import Workout from '../components/Workout';
 
 const Home = ({ signout, user }) => {
   const router = useRouter();
@@ -49,37 +48,6 @@ const Home = ({ signout, user }) => {
     fetchWorkoutData();
   }, [date]);
 
-  const getWorkoutHeading = () => {
-    const header = `${workoutDetail.muscleGroup} ${workoutTypes.find(wt => wt.value == workoutDetail.workoutType)?.name} Workout - ${new Date(workoutDetail.date + 'T23:59:59').toLocaleDateString()}`
-    return toTitleCase(header);
-  };
-
-  const getWorkoutEquipment = () => {
-    const allEquipment = workoutDetail.equipment.split(',');
-    const formattedEquipment = allEquipment.map(e => {
-      return equipment.find(equip => equip.value == e.trim())?.name
-    });
-
-    return combineWithAnd(formattedEquipment);
-  };
-
-  const toTitleCase = (unformatted) => {
-    return unformatted.replace(/\w\S*/g, function (txt) {
-      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
-  };
-
-  const combineWithAnd = (strings) => {
-    if (strings.length === 0) return '';
-    if (strings.length === 1) return strings[0];
-    if (strings.length === 2) return strings.join(' and ');
-  
-    const allButLast = strings.slice(0, -1).join(', ');
-    const last = strings[strings.length - 1];
-  
-    return `${allButLast}, and ${last}`;
-  };
-
   if (loading) {
     return (
       <Flex direction="column" alignItems="center" justifyContent="center" >
@@ -101,44 +69,7 @@ const Home = ({ signout, user }) => {
             </Alert>
           )}
           {workoutDetail?.workout && (
-            <>
-              <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
-                <Heading level={5} color="white">{getWorkoutHeading()}</Heading>
-                <Text marginTop=".3em" color="white"><i>With {getWorkoutEquipment()}</i></Text>
-              </Alert>
-              <View>
-                <Card variation="elevated">
-                  <Heading level={4}>Warmup</Heading>
-                  <Flex direction="row" wrap="wrap" gap=".5em" marginTop="1em">
-                    {workoutDetail?.workout?.warmup?.exercises?.map((exercise, exerciseIndex) => (
-                      <Text key={`workout-${exerciseIndex}`} basis="48%">{`${exercise.numReps}x ${exercise.name}`}</Text>
-                    ))}
-                  </Flex>
-                </Card>
-                <Card variation="elevated" marginTop="1em">
-                  <Heading level={4}>Main Set</Heading>
-                  <Flex direction="column" gap=".5em" marginTop="1em">
-                    <Heading level={5}>{workoutDetail?.workout?.mainSet?.numSets} rounds</Heading>
-                    {workoutDetail?.workout?.mainSet?.sets?.map((set, index) => (
-                      <View key={`set-${index}`}>
-                        <Text><b>Set {index + 1}</b></Text>
-                        {set.exercises.map((exercise, exerciseIndex) => (
-                          <Text key={`set-${index}-${exerciseIndex}`}>&ensp;{exercise.name}</Text>
-                        ))}
-                      </View>
-                    ))}
-                  </Flex>
-                </Card>
-                <Card variation="elevated" marginTop="1em">
-                  <Heading level={4}>Abs</Heading>
-                  <Flex direction="row" wrap="wrap" gap=".5em" marginTop="1em">
-                    {workoutDetail?.workout?.abs?.exercises?.map((exercise, exerciseIndex) => (
-                      <Text key={`ab-${exerciseIndex}`} basis="48%">{`${exercise.numReps}x ${exercise.name}`}</Text>
-                    ))}
-                  </Flex>
-                </Card>
-              </View>
-            </>
+            <Workout detail={workoutDetail} showDate={true} />
           )}
           {!workoutDetail?.workout && (
             <Flex direction="column" alignItems="center">

@@ -104,9 +104,10 @@
             "Parameters": {
               "FunctionName": "${AskChatGPT}",
               "Payload": {
-                "systemContext": "You are an expert fitness trainer AI with a strong desire to help people reach their goals",
+                "systemContext": "You are an expert fitness trainer with a strong desire to help people reach their goals. Your expertise is creative yet effective workouts that hit the time the user wants.",
                 "query.$": "$.workout.prompt",
                 "schema": {
+                  "$schema": "http://json-schema.org/draft-07/schema#",
                   "type": "object",
                   "properties": {
                     "mainSet": {
@@ -128,7 +129,9 @@
                             "circuit",
                             "supersets",
                             "special workout",
-                            "standard"
+                            "standard",
+                            "AMRAP",
+                            "EMOM"
                           ]
                         },
                         "sets": {
@@ -136,14 +139,17 @@
                           "items": {
                             "type": "object",
                             "required": [
-                              "numReps",
                               "exercises"
                             ],
                             "properties": {
                               "numReps": {
                                 "type": "integer",
-                                "description": "The number of reps to perform on all exercises in the set",
+                                "description": "The number of reps to perform on all exercises in the set. Mutually exclusive with duration.",
                                 "minimum": 1
+                              },
+                              "duration": {
+                                "type": "integer",
+                                "description": "The duration in seconds to perform on all exercises in the set. Mutually exclusive with numReps."
                               },
                               "exercises": {
                                 "type": "array",
@@ -161,10 +167,28 @@
                                     "description": {
                                       "type": "string",
                                       "description": "Describes how to perform the exercise"
+                                    },
+                                    "numReps": {
+                                      "type": "integer",
+                                      "description": "Used to indicate how many reps to do of this specific exercise. Used if all exercises in the set do not have the same number of reps, otherwise omitted."
                                     }
                                   }
                                 }
                               }
+                            }
+                          }
+                        },
+                        "timeBased": {
+                          "type": "object",
+                          "description": "Properties specific to time-based workouts like AMRAP and EMOM",
+                          "properties": {
+                            "totalTime": {
+                              "type": "integer",
+                              "description": "Total time in seconds for the workout"
+                            },
+                            "intervalTime": {
+                              "type": "integer",
+                              "description": "Time in seconds for EMOM intervals"
                             }
                           }
                         }
@@ -203,7 +227,7 @@
                       "properties": {
                         "numSets": {
                           "type": "integer",
-                          "description": "Number of sets to perform",
+                          "description": "The number of sets to complete",
                           "minimum": 1
                         },
                         "exercises": {
@@ -260,22 +284,93 @@
               "user.$": "$.user",
               "date.$": "$.workout.date",
               "notificationDate.$": "$.workout.notificationDate",
+              "canSendNotification.$": "$.workout.canSendNotification",
               "muscleGroup.$": "$.workout.muscleGroup",
               "equipment.$": "$.workout.equipment",
               "workoutType.$": "$.workout.workoutType",
-              "workout.$": "$.chatgpt.Payload.response"
+              "workout.$": "$.chatgpt.Payload.response",
+              "workoutId.$": "States.UUID()",
+              "estimatedTime.$": "$.workout.targetTime"
             }
           },
           "Should Send Notification?": {
             "Type": "Choice",
             "Choices": [
               {
-                "Variable": "$.user.contact.M.type.S",
-                "StringEquals": "email",
-                "Next": "Create One-Time Schedule"
+                "And": [
+                  {
+                    "Variable": "$.user.contact",
+                    "IsPresent": true
+                  },
+                  {
+                    "Variable": "$.user.contact.M.type",
+                    "IsPresent": true
+                  },
+                  {
+                    "Variable": "$.user.contact.M.type.S",
+                    "StringEquals": "email"
+                  },                  
+                  {
+                    "Variable": "$.workout.canSendNotification",
+                    "IsPresent": true
+                  },
+                  {
+                    "Variable": "$.workout.canSendNotification",
+                    "BooleanEquals": true
+                  }
+                ],
+                "Next": "Does Schedule Already Exist?"
               }
             ],
             "Default": "Save Workout"
+          },
+          "Does Schedule Already Exist?": {
+            "Type": "Task",
+            "Next": "Update Schedule",
+            "Parameters": {
+              "Name.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)",
+              "GroupName": "aifitness"
+            },
+            "Resource": "${SchedulerGetSchedule}",
+            "ResultPath": null,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "Scheduler.ResourceNotFoundException"
+                ],
+                "Next": "Create One-Time Schedule",
+                "ResultPath": null
+              }
+            ]
+          },
+          "Update Schedule": {
+            "Type": "Task",
+            "Next": "Save Workout",
+            "Parameters": {
+              "FlexibleTimeWindow": {
+                "Mode": "OFF"
+              },
+              "GroupName": "aifitness",
+              "Name.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)",
+              "ScheduleExpression.$": "States.Format('at({})', $.notificationDate)",
+              "ScheduleExpressionTimezone.$": "$.user.contact.M.timezone.S",
+              "Target": {
+                "Arn": "${SendWorkoutNotification}",
+                "RoleArn": "${SendWorkoutNotificationRole}",
+                "Input": {
+                  "key": {
+                    "pk.$": "States.Format('{}#{}', $.user.pk.S, $.date)",
+                    "sk": "workout"
+                  },
+                  "contact": {
+                    "type.$": "$.user.contact.M.type.S",
+                    "value.$": "$.user.contact.M.email.S"
+                  }
+                }
+              }
+            },
+            "Resource": "${SchedulerUpdateSchedule}",
+            "ResultPath": null
           },
           "Create One-Time Schedule": {
             "Type": "Task",
@@ -322,7 +417,11 @@
                   "equipment.$": "$.equipment",
                   "workoutType.$": "$.workoutType",
                   "workout.$": "$.workout",
-                  "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)"
+                  "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)",
+                  "listType": "workout",
+                  "listSort.$": "States.Format('{}#{}', $.muscleGroup, $.workoutId)",
+                  "workoutId.$": "$.workoutId",
+                  "estimatedTime.$": "$.estimatedTime"
                 }
               }
             },

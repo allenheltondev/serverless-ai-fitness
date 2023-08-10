@@ -1,0 +1,15 @@
+{
+  "name": "data-conversion",
+  "version": "1.0.0",
+  "description": "Used to convert DynamoDB data to a new schema",
+  "main": "2023-08-08_indexing-workouts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "allenheltondev",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.386.0",
+    "@aws-sdk/util-dynamodb": "^3.386.0"
+  }
+}

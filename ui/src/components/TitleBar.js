@@ -4,6 +4,7 @@ import { Flex, Link, Text, Image, Button, Menu, MenuItem } from '@aws-amplify/ui
 import { GiWeightLiftingUp, GiWeight } from 'react-icons/gi';
 import { CgProfile, CgCalendar } from 'react-icons/cg';
 import { BiHelpCircle, BiMenu } from 'react-icons/bi';
+import { RiArchiveDrawerLine} from 'react-icons/ri';
 import { useRouter } from 'next/router';
 import { CognitoHostedUIIdentityProvider } from '@aws-amplify/auth/lib/types';
 import { config } from '../config';
@@ -40,6 +41,10 @@ const TitleBar = ({ toggleMenu }) => {
               <MenuItem onClick={(() => router.push('/calendar'))}>
                 <CgCalendar color="black" />
                 <Text marginLeft=".6em">Calendar</Text>
+              </MenuItem>
+              <MenuItem onClick={(() => router.push('/workouts'))}>
+                <RiArchiveDrawerLine color="black" />
+                <Text marginLeft=".6em">Browse</Text>
               </MenuItem>
               <MenuItem onClick={(() => router.push('/settings'))}>
                 <GiWeight color="black" />

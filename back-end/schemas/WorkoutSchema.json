@@ -21,7 +21,9 @@
             "circuit",
             "supersets",
             "special workout",
-            "standard"
+            "standard",
+            "AMRAP",
+            "EMOM"
           ]
         },
         "sets": {
@@ -29,14 +31,17 @@
           "items": {
             "type": "object",
             "required": [
-              "numReps",
               "exercises"
             ],
             "properties": {
               "numReps": {
                 "type": "integer",
-                "description": "The number of reps to perform on all exercises in the set",
+                "description": "The number of reps to perform on all exercises in the set. Mutually exclusive with duration.",
                 "minimum": 1
+              },
+              "duration": {
+                "type": "integer",
+                "description": "The duration in seconds to perform on all exercises in the set. Mutually exclusive with numReps."
               },
               "exercises": {
                 "type": "array",
@@ -54,10 +59,28 @@
                     "description": {
                       "type": "string",
                       "description": "Describes how to perform the exercise"
+                    },
+                    "numReps": {
+                      "type": "integer",
+                      "description": "Used to indicate how many reps to do of this specific exercise. Used if all exercises in the set do not have the same number of reps, otherwise omitted."
                     }
                   }
                 }
               }
+            }
+          }
+        },
+        "timeBased": {
+          "type": "object",
+          "description": "Properties specific to time-based workouts like AMRAP and EMOM",
+          "properties": {
+            "totalTime": {
+              "type": "integer",
+              "description": "Total time in seconds for the workout"
+            },
+            "intervalTime": {
+              "type": "integer",
+              "description": "Time in seconds for EMOM intervals"
             }
           }
         }
