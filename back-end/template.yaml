@@ -505,6 +505,25 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
 
+  GetRandomWorkoutOfTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/get-random-workout-of-type
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: "{{resolve:ssm:/serverless-toolbox/secrets}}"
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !Sub ${FitnessEncyclopediaTable.Arn}/index/list
+      Environment:
+        Variables:
+          SECRET_ID: "{{resolve:ssm:/serverless-toolbox/secrets}}"
+          TABLE_NAME: !Ref FitnessEncyclopediaTable
+
   WorkoutApi:
     Type: AWS::Serverless::Api
     Properties:

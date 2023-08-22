@@ -135,7 +135,9 @@ export const getWorkoutById = `
           sets {
             numReps
             exercises {
-              name            
+              name
+              numReps
+              duration   
             }
           }
         }
@@ -171,7 +173,9 @@ export const getWorkoutByDate = `
           sets {
             numReps
             exercises {
-              name            
+              name
+              numReps
+              duration      
             }
           }
         }

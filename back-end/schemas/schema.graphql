@@ -35,11 +35,14 @@ type PaginatedWorkout {
 type Exercise {
   name: String!
   description: String
+  numReps: Int
+  duration: Int
 }
 
 type Set {
-  numReps: Int!
+  numReps: Int
   exercises: [Exercise!]!
+  duration: Int
 }
 
 type MainSet {

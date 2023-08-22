@@ -5,12 +5,11 @@ import { BiArrowBack } from 'react-icons/bi';
 
 const Workout = ({ detail, date, showGoBack, backDestination }) => {
   const router = useRouter();
-  console.log(date);
   return (
     <>
       <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
         <Flex direction="row" gap="1em" alignItems="center">
-          {showGoBack && ( <BiArrowBack size="2em" color="white" onClick={() => router.push(backDestination)} style={{cursor: "pointer"}} />)}
+          {showGoBack && (<BiArrowBack size="2em" color="white" onClick={() => router.push(backDestination)} style={{ cursor: "pointer" }} />)}
           <Flex direction="column" gap=".3em">
             <Heading level={5} color="white">{getWorkoutHeading(detail, date)}</Heading>
             <Text color="white"><i>With {getWorkoutEquipment(detail)}</i></Text>
@@ -33,9 +32,12 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
             <Heading level={5}>{detail?.workout?.mainSet?.numSets} rounds</Heading>
             {detail?.workout?.mainSet?.sets?.map((set, index) => (
               <View key={`set-${index}`}>
-                <Text><b>Set {index + 1}</b></Text>
+                {detail?.workout?.mainSet?.sets.length > 1 ?
+                  (<Text><b>Set {index + 1}{set.exercises.some(e => e.numReps) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
+                  : (<Text><b>{set.exercises.some(e => e.numReps) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
+                }
                 {set.exercises.map((exercise, exerciseIndex) => (
-                  <Text key={`set-${index}-${exerciseIndex}`}>&ensp;{exercise.name}</Text>
+                  <Text key={`set-${index}-${exerciseIndex}`}>&ensp;{exercise.numReps ? exercise.numReps + 'x ' : ''}{exercise.name}</Text>
                 ))}
               </View>
             ))}

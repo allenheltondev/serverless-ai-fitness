@@ -37,7 +37,9 @@ const ArchivedWorkoutPage = ({ signout, user }) => {
       }
     };
 
-    fetchWorkoutData();
+    if (workoutId) {
+      fetchWorkoutData();
+    }
   }, [workoutId]);
 
   if (loading) {
@@ -54,11 +56,10 @@ const ArchivedWorkoutPage = ({ signout, user }) => {
         <Flex direction="column" width="100%">
           <Head>
             <title>Workout | Ready, Set, Cloud Fitness!</title>
-          </Head>         
-          {workoutDetail && (
+          </Head>
+          {workoutDetail ? (
             <Workout detail={workoutDetail} showDate={false} showGoBack={true} backDestination={`/workouts${workoutDetail?.muscleGroup ? '?muscleGroup=' + workoutDetail.muscleGroup : ''}`} />
-          )}
-          {!workoutDetail && (
+          ) : (
             <Flex direction="column" alignItems="center">
               <Heading level={5}>Cannot Find Workout</Heading>
               <Text>That's weird, we can't find what you're looking for</Text>
