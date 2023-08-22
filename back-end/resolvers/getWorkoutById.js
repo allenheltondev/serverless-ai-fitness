@@ -1,9 +1,10 @@
 import { util } from "@aws-appsync/utils";
 
 export function request(ctx) {  
+  const workoutId = ctx.prev.result.id ?? ctx.args.id;
   return {
     operation: "GetItem",
-    key: util.dynamodb.toMapValues({ pk: ctx.args.id, sk: 'workout' }),
+    key: util.dynamodb.toMapValues({ pk: workoutId, sk: 'workout' }),
   };
 }
 

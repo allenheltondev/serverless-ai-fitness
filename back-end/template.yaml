@@ -370,8 +370,21 @@ Resources:
             Version: 1.0.0
           DataSource: WorkoutDataSource
           CodeUri: ./resolvers/isUserConfigured.js
+        getWorkoutIdFunction:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: WorkoutDataSource
+          CodeUri: ./resolvers/getWorkoutId.js        
       Resolvers:
-        Query:
+        Query:          
+          getWorkoutByDate:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getWorkoutIdFunction
+              - getWorkoutByIdFunction
           getUserWorkout:
             Runtime:
               Name: APPSYNC_JS
@@ -542,7 +555,9 @@ Resources:
           Statement:
             - Effect: Allow
               Action: dynamodb:PutItem
-              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+              Resource: 
+                - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+                - !GetAtt FitnessEncyclopediaTable.Arn
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
@@ -652,6 +667,7 @@ Resources:
         SchedulerUpdateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:updateSchedule
         SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
         TableName: !Ref TableName
+        WorkoutTable: !Ref FitnessEncyclopediaTable
       Policies:
         - Version: 2012-10-17
           Statement:            

@@ -3,15 +3,16 @@ import { Alert, Heading, Text, View, Card, Flex } from '@aws-amplify/ui-react';
 import { getWorkoutHeading, getWorkoutEquipment } from '../util/formatters';
 import { BiArrowBack } from 'react-icons/bi';
 
-const Workout = ({ detail, showDate, showGoBack, backDestination }) => {
+const Workout = ({ detail, date, showGoBack, backDestination }) => {
   const router = useRouter();
+  console.log(date);
   return (
     <>
       <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
         <Flex direction="row" gap="1em" alignItems="center">
           {showGoBack && ( <BiArrowBack size="2em" color="white" onClick={() => router.push(backDestination)} style={{cursor: "pointer"}} />)}
           <Flex direction="column" gap=".3em">
-            <Heading level={5} color="white">{getWorkoutHeading(detail, showDate)}</Heading>
+            <Heading level={5} color="white">{getWorkoutHeading(detail, date)}</Heading>
             <Text color="white"><i>With {getWorkoutEquipment(detail)}</i></Text>
           </Flex>
         </Flex>

@@ -4,6 +4,7 @@ schema {
 }
 
 type Query {
+  getWorkoutByDate(date: String!): Workout
   getUserWorkout(date: String!): Workout
   getWorkoutList(date: String!): WorkoutRange
   getWorkoutArchive(muscleGroup: String!, nextToken: String): PaginatedWorkouts

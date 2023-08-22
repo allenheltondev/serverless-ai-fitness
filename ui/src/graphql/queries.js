@@ -150,3 +150,39 @@ export const getWorkoutById = `
     }
   }
 `
+
+export const getWorkoutByDate = `
+  query getWorkoutByDate($date: String!) {
+    getWorkoutByDate(date: $date) {
+      muscleGroup
+      date
+      equipment
+      type
+      workout {
+        warmup {
+          exercises {
+            name
+            numReps
+          }
+        }
+        mainSet {
+          numSets
+          setType
+          sets {
+            numReps
+            exercises {
+              name            
+            }
+          }
+        }
+        abs {
+          numSets
+          exercises {
+            name
+            numReps
+          }
+        }
+      }
+    }
+  }
+`;

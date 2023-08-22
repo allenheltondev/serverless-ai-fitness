@@ -4,8 +4,9 @@ const { marshall } = require('@aws-sdk/util-dynamodb');
 const ddb = new DynamoDBClient();
 
 exports.handler = async (state) => {
+  let tableName = state.tableName ?? process.env.TABLE_NAME;
   await ddb.send(new PutItemCommand({
-    TableName: process.env.TABLE_NAME,
+    TableName: tableName,
     Item: marshall(state.item)
   }));
 

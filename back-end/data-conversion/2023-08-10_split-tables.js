@@ -44,22 +44,26 @@ const run = async (commit = false) => {
   console.log(data.length);
 
   for(const workout of data){
+    const difficulty = workout.difficulty ?? 'beginner';
+    if(!workout.difficulty){
+      console.log(workout.workoutId);
+    }
     const record = {
       pk: workout.workoutId,
       sk: 'workout',
       listType: 'workout',
-      listSort: `${workout.muscleGroup}#${workout.difficulty}`,
+      listSort: `${workout.muscleGroup}#${difficulty}`,
       muscleGroup: workout.muscleGroup,
       equipment: workout.equipment,
       type: workout.workoutType,
       estimatedTime: workout.estimatedTime,
-      difficulty: workout.difficulty,
+      difficulty: difficulty,
       rating: 0,
       workout: workout.workout
     }
 
     await ddb.send(new PutItemCommand({
-      TableName: '',
+      TableName: 'fitness-app-FitnessEncyclopediaTable-ELY1K2Y52OF0',
       Item: marshall(record)
     }));
   }

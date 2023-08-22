@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Authenticator, Heading, Text, Flex, Loader, Image, Alert, Link } from '@aws-amplify/ui-react';
-import { getWorkout, isConfigured } from '../graphql/queries';
+import { getWorkoutByDate, isConfigured } from '../graphql/queries';
 import { API } from 'aws-amplify';
 import Workout from '../components/Workout';
 
@@ -14,13 +14,11 @@ const Home = ({ signout, user }) => {
   const [workoutDetail, setWorkoutDetail] = useState();
 
   useEffect(() => {
-    if (router.query.date) {
-      try {
+    if (router.query.date && isValidDate(router.query.date)) {
         const queryDate = new Date(`${router.query.date}T23:59:59`);
-        setDate(queryDate.toLocaleDateString('en-US'));
-      }
-      catch (err) {
-      }
+        setDate(getLocalDate(queryDate));
+    } else {
+      setDate(getLocalDate());
     }
   }, [router.query]);
 
@@ -29,13 +27,13 @@ const Home = ({ signout, user }) => {
       setLoading(true);
       try {
         const workoutSettings = await API.graphql({
-          query: getWorkout,
+          query: getWorkoutByDate,
           variables: {
             date: new Date(date).toISOString().split('T')[0]
           }
         });
 
-        setWorkoutDetail(workoutSettings.data.getUserWorkout);
+        setWorkoutDetail(workoutSettings.data.getWorkoutByDate);
         const configuration = await API.graphql({ query: isConfigured });
         setIsUserConfigured(configuration.data.isUserConfigured);
       } catch (err) {
@@ -47,6 +45,24 @@ const Home = ({ signout, user }) => {
 
     fetchWorkoutData();
   }, [date]);
+
+  const getLocalDate = (date) => {
+    if(!date){
+      date = new Date();
+    }
+
+    const localYear = date.getFullYear();
+    const localMonth = date.getMonth() + 1;
+    const localDay = date.getDate();
+
+    const localDateString = localYear + '-' + (localMonth < 10 ? '0' : '') + localMonth + '-' + (localDay < 10 ? '0' : '') + localDay;
+    return localDateString;
+  };
+
+  const isValidDate = (dateString) => {
+    const timestamp = Date.parse(dateString);
+    return !isNaN(timestamp);
+  }
 
   if (loading) {
     return (
@@ -68,8 +84,11 @@ const Home = ({ signout, user }) => {
               Looks like you still need some configuration. Head over to <Link href="/settings">settings</Link> to finish setting up!
             </Alert>
           )}
+          <Alert variation="error" hasIcon={true} isDismissible={false} heading="Oh man.">
+              This got a little too popular! We ran out of budget to create new workouts this month. You can still <Link href="/workouts">browse our workout list</Link> to get in some exercise.
+            </Alert>
           {workoutDetail?.workout && (
-            <Workout detail={workoutDetail} showDate={true} />
+            <Workout detail={workoutDetail} date={date} />
           )}
           {!workoutDetail?.workout && (
             <Flex direction="column" alignItems="center">

@@ -21,8 +21,8 @@ const combineWithAnd = (strings) => {
   return `${allButLast}, and ${last}`;
 };
 
-export const getWorkoutHeading = (workout, showDate = false) => {
-  const header = `${workout.muscleGroup} ${workoutTypes.find(wt => wt.value == workout.workoutType)?.name ?? workoutTypes.find(wt => wt.value == workout.type)?.name} Workout ${showDate ? '- ' + new Date(workout.date + 'T23:59:59').toLocaleDateString() : ''}`;
+export const getWorkoutHeading = (workout, date) => {
+  const header = `${workout.muscleGroup} ${workoutTypes.find(wt => wt.value == workout.workoutType)?.name ?? workoutTypes.find(wt => wt.value == workout.type)?.name} Workout ${date ? '- ' + new Date(date + 'T23:59:59').toLocaleDateString() : ''}`;
   return toTitleCase(header);
 };
 

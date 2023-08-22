@@ -290,7 +290,8 @@
               "workoutType.$": "$.workout.workoutType",
               "workout.$": "$.chatgpt.Payload.response",
               "workoutId.$": "States.UUID()",
-              "estimatedTime.$": "$.workout.targetTime"
+              "estimatedTime.$": "$.workout.targetTime",
+              "difficulty.$": "$.workout.difficulty"
             }
           },
           "Should Send Notification?": {
@@ -311,18 +312,18 @@
                     "StringEquals": "email"
                   },                  
                   {
-                    "Variable": "$.workout.canSendNotification",
+                    "Variable": "$.canSendNotification",
                     "IsPresent": true
                   },
                   {
-                    "Variable": "$.workout.canSendNotification",
+                    "Variable": "$.canSendNotification",
                     "BooleanEquals": true
                   }
                 ],
                 "Next": "Does Schedule Already Exist?"
               }
             ],
-            "Default": "Save Workout"
+            "Default": "Save Workout to User"
           },
           "Does Schedule Already Exist?": {
             "Type": "Task",
@@ -345,7 +346,7 @@
           },
           "Update Schedule": {
             "Type": "Task",
-            "Next": "Save Workout",
+            "Next": "Save Workout to User",
             "Parameters": {
               "FlexibleTimeWindow": {
                 "Mode": "OFF"
@@ -374,7 +375,7 @@
           },
           "Create One-Time Schedule": {
             "Type": "Task",
-            "Next": "Save Workout",
+            "Next": "Save Workout to User",
             "Parameters": {
               "FlexibleTimeWindow": {
                 "Mode": "OFF"
@@ -401,7 +402,7 @@
             "Resource": "${SchedulerCreateSchedule}",
             "ResultPath": "$.schedule"
           },
-          "Save Workout": {
+          "Save Workout to User": {
             "Type": "Task",
             "Resource": "${LambdaInvoke}",
             "Parameters": {
@@ -416,12 +417,46 @@
                   "muscleGroup.$": "$.muscleGroup",
                   "equipment.$": "$.equipment",
                   "workoutType.$": "$.workoutType",
-                  "workout.$": "$.workout",
                   "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)",
+                  "workoutId.$": "$.workoutId"                  
+                }
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 6,
+                "BackoffRate": 2
+              }
+            ],
+            "ResultPath": null,
+            "Next": "Save Workout to Encyclopedia"
+          },
+          "Save Workout to Encyclopedia": {
+            "Type": "Task",
+            "Resource": "${LambdaInvoke}",
+            "Parameters": {
+              "FunctionName": "${SaveToDynamoDB}",
+              "Payload": {
+                "tableName": "${WorkoutTable}",
+                "item": {
+                  "pk.$": "$.workoutId",
+                  "sk": "workout",
                   "listType": "workout",
-                  "listSort.$": "States.Format('{}#{}', $.muscleGroup, $.workoutId)",
-                  "workoutId.$": "$.workoutId",
-                  "estimatedTime.$": "$.estimatedTime"
+                  "listSort.$": "States.Format('{}#{}', $.muscleGroup, $.difficulty)",
+                  "muscleGroup.$": "$.muscleGroup",
+                  "equipment.$": "$.equipment",
+                  "type.$": "$.workoutType",
+                  "estimatedTime.$": "$.estimatedTime",                  
+                  "difficulty.$": "$.difficulty",
+                  "rating": 0,
+                  "workout.$": "$.workout"       
                 }
               }
             },

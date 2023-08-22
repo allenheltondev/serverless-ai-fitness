@@ -40,7 +40,7 @@ exports.handler = async (state) => {
       if (!muscleGroups.length) {
         muscleGroups = shuffleArray([...settings.muscleGroups]);
       }
-      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel, profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime, settings.specialWorkouts);
+      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel ?? 'beginner', profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime, settings.specialWorkouts);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
@@ -74,7 +74,8 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
     targetTime,
     objective,
     equipment: getEquipment(equipment),
-    workoutType: workoutTypes[Math.floor(Math.random() * workoutTypes.length)]
+    workoutType: workoutTypes[Math.floor(Math.random() * workoutTypes.length)],
+    difficulty: experienceLevel
   };
 
   const isSpecialDay = isSpecialWorkoutDay(specialWorkouts, day);
@@ -124,6 +125,7 @@ const formatWorkout = (workout) => {
     equipment: workout.equipment.join(', '),
     workoutType: workout.workoutType?.type || 'special workout',
     prompt: workout.prompt,
-    targetTime: workout.targetTime
+    targetTime: workout.targetTime,
+    difficulty: workout.difficulty
   };
 };
