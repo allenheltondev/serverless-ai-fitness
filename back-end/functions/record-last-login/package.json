@@ -1,0 +1,15 @@
+{
+  "name": "record-last-login",
+  "version": "1.0.0",
+  "description": "Records the last login time of a user",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "allenheltondev",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.395.0",
+    "@aws-sdk/util-dynamodb": "^3.395.0"
+  }
+}

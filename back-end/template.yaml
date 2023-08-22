@@ -283,6 +283,27 @@ Resources:
           Properties:
             Trigger: PostConfirmation
             UserPool: !Ref CognitoUserPool
+
+  RecordLastLoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/record-last-login
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:UpdateItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Events:
+        Cognito:
+          Type: Cognito
+          Properties:
+            Trigger: PostAuthentication
+            UserPool: !Ref CognitoUserPool
           
   AiFitnessUserFilesBucket:
     Type: AWS::S3::Bucket

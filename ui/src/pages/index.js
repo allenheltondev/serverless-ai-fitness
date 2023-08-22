@@ -83,10 +83,7 @@ const Home = ({ signout, user }) => {
             <Alert variation="warning" hasIcon={true} isDismissible={false} heading="Update needed">
               Looks like you still need some configuration. Head over to <Link href="/settings">settings</Link> to finish setting up!
             </Alert>
-          )}
-          <Alert variation="error" hasIcon={true} isDismissible={false} heading="Oh man.">
-              This got a little too popular! We ran out of budget to create new workouts this month. You can still <Link href="/workouts">browse our workout list</Link> to get in some exercise.
-            </Alert>
+          )}         
           {workoutDetail?.workout && (
             <Workout detail={workoutDetail} date={date} />
           )}
