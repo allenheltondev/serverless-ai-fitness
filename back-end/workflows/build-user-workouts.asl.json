@@ -96,8 +96,87 @@
         "ProcessorConfig": {
           "Mode": "INLINE"
         },
-        "StartAt": "Ask ChatGPT To Create Workout",
+        "StartAt": "Is Subscriber?",
         "States": {
+          "Is Subscriber?": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "And": [
+                  {
+                    "Variable": "$.profile.subscription.level",
+                    "IsPresent": true
+                  },
+                  {
+                    "Not": {
+                      "Variable": "$.profile.subscription.level",
+                      "StringEquals": "free"
+                    }
+                  }
+                ],
+                "Next": "Ask ChatGPT To Create Workout"
+              }
+            ],
+            "Default": "Get Existing Workout"
+          },
+          "Get Existing Workout": {
+            "Type": "Task",
+            "Resource": "${LambdaInvoke}",
+            "Parameters": {
+              "FunctionName": "${GetRandomWorkoutOfType}",
+              "Payload": {
+                "muscleGroup.$": "$.workout.muscleGroup",
+                "difficulty.$": "$.workout.difficulty"
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 6,
+                "BackoffRate": 2
+              }
+            ],
+            "Next": "Found Matching Workout?",
+            "ResultPath": "$.foundWorkout"
+          },
+          "Found Matching Workout?": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.foundWorkout.Payload.pk",
+                "IsPresent": true,
+                "Next": "Format Existing Workout Object"
+              }
+            ],
+            "Default": "No Found Workout"
+          },
+          "No Found Workout": {
+            "Type": "Pass",
+            "End": true
+          },
+          "Format Existing Workout Object": {
+            "Type": "Pass",
+            "Parameters": {
+              "user.$": "$.user",
+              "date.$": "$.workout.date",
+              "notificationDate.$": "$.workout.notificationDate",
+              "canSendNotification.$": "$.workout.canSendNotification",
+              "muscleGroup.$": "$.foundWorkout.Payload.muscleGroup",
+              "equipment.$": "$.foundWorkout.Payload.equipment",
+              "workoutType.$": "$.foundWorkout.Payload.type",
+              "workoutId.$": "$.foundWorkout.Payload.pk",
+              "estimatedTime.$": "$.foundWorkout.Payload.estimatedTime",
+              "difficulty.$": "$.foundWorkout.Payload.difficulty",
+              "isNewWorkout": false
+            },
+            "Next": "Should Send Notification?"
+          },
           "Ask ChatGPT To Create Workout": {
             "Type": "Task",
             "Resource": "${LambdaInvoke}",
@@ -275,9 +354,18 @@
               }
             ],
             "ResultPath": "$.chatgpt",
-            "Next": "Format Workout Object"
+            "Next": "Format New Workout Object",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "RateLimitExceeded"
+                ],
+                "ResultPath": null,
+                "Next": "Get Existing Workout"
+              }
+            ]
           },
-          "Format Workout Object": {
+          "Format New Workout Object": {
             "Type": "Pass",
             "Next": "Should Send Notification?",
             "Parameters": {
@@ -291,7 +379,8 @@
               "workout.$": "$.chatgpt.Payload.response",
               "workoutId.$": "States.UUID()",
               "estimatedTime.$": "$.workout.targetTime",
-              "difficulty.$": "$.workout.difficulty"
+              "difficulty.$": "$.workout.difficulty",
+              "isNewWorkout": true
             }
           },
           "Should Send Notification?": {
@@ -310,7 +399,7 @@
                   {
                     "Variable": "$.user.contact.M.type.S",
                     "StringEquals": "email"
-                  },                  
+                  },
                   {
                     "Variable": "$.canSendNotification",
                     "IsPresent": true
@@ -418,7 +507,7 @@
                   "equipment.$": "$.equipment",
                   "workoutType.$": "$.workoutType",
                   "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)",
-                  "workoutId.$": "$.workoutId"                  
+                  "workoutId.$": "$.workoutId"
                 }
               }
             },
@@ -436,7 +525,30 @@
               }
             ],
             "ResultPath": null,
-            "Next": "Save Workout to Encyclopedia"
+            "Next": "Save to Encyclopedia?"
+          },
+          "Save to Encyclopedia?": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "And": [
+                  {
+                    "Variable": "$.isNewWorkout",
+                    "IsPresent": true
+                  },
+                  {
+                    "Variable": "$.isNewWorkout",
+                    "BooleanEquals": true
+                  }
+                ],
+                "Next": "Save Workout to Encyclopedia"
+              }
+            ],
+            "Default": "Do Not Save"
+          },
+          "Do Not Save": {
+            "Type": "Pass",
+            "End": true
           },
           "Save Workout to Encyclopedia": {
             "Type": "Task",
@@ -453,10 +565,10 @@
                   "muscleGroup.$": "$.muscleGroup",
                   "equipment.$": "$.equipment",
                   "type.$": "$.workoutType",
-                  "estimatedTime.$": "$.estimatedTime",                  
+                  "estimatedTime.$": "$.estimatedTime",
                   "difficulty.$": "$.difficulty",
                   "rating": 0,
-                  "workout.$": "$.workout"       
+                  "workout.$": "$.workout"
                 }
               }
             },
