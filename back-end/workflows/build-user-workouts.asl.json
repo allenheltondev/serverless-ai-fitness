@@ -104,12 +104,12 @@
               {
                 "And": [
                   {
-                    "Variable": "$.profile.subscription.level",
+                    "Variable": "$.user.subscription.M.level.S",
                     "IsPresent": true
                   },
                   {
                     "Not": {
-                      "Variable": "$.profile.subscription.level",
+                      "Variable": "$.user.subscription.M.level.S",
                       "StringEquals": "free"
                     }
                   }
@@ -447,15 +447,14 @@
               "Target": {
                 "Arn": "${SendWorkoutNotification}",
                 "RoleArn": "${SendWorkoutNotificationRole}",
-                "Input": {
-                  "key": {
-                    "pk.$": "States.Format('{}#{}', $.user.pk.S, $.date)",
-                    "sk": "workout"
-                  },
+                "Input": {                 
                   "contact": {
                     "type.$": "$.user.contact.M.type.S",
                     "value.$": "$.user.contact.M.email.S"
-                  }
+                  },
+                  "workoutId.$": "$.workoutId",
+                  "date.$": "$.date",
+                  "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)"
                 }
               }
             },
@@ -476,15 +475,14 @@
               "Target": {
                 "Arn": "${SendWorkoutNotification}",
                 "RoleArn": "${SendWorkoutNotificationRole}",
-                "Input": {
-                  "key": {
-                    "pk.$": "States.Format('{}#{}', $.user.pk.S, $.date)",
-                    "sk": "workout"
-                  },
+                "Input": {                 
                   "contact": {
                     "type.$": "$.user.contact.M.type.S",
                     "value.$": "$.user.contact.M.email.S"
-                  }
+                  },
+                  "workoutId.$": "$.workoutId",
+                  "date.$": "$.date",
+                  "scheduleName.$": "States.Format('WORKOUT-{}-{}', $.user.pk.S, $.date)"
                 }
               }
             },

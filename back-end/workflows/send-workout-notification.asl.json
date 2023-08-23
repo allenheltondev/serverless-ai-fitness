@@ -1,8 +1,47 @@
 {
   "Comment": "Sends a notification for a workout",
-  "StartAt": "Get Workout",
+  "StartAt": "Has Workout Id?",
   "States": {
-    "Get Workout": {
+    "Has Workout Id?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.workoutId",
+          "IsPresent": true,
+          "Next": "Load Workout Detail"
+        }
+      ],
+      "Default": "Get User Workout"
+    },
+    "Load Workout Detail": {
+      "Type": "Task",
+      "Resource": "${DynamoDbGetItem}",
+      "Parameters": {
+        "TableName": "${WorkoutTable}",
+        "Key": {
+          "pk": {
+            "S.$": "$.workoutId"
+          },
+          "sk": {
+            "S": "workout"
+          }
+        }
+      },
+      "ResultPath": "$.detail",
+      "Next": "Workout Detail Found?"
+    },
+    "Workout Detail Found?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.detail.Item",
+          "IsPresent": true,
+          "Next": "Unmarshall Data"
+        }
+      ],
+      "Default": "Could Not Find Workout"
+    },
+    "Get User Workout": {
       "Type": "Task",
       "Resource": "${DynamoDbGetItem}",
       "Parameters": {
@@ -24,10 +63,18 @@
         {
           "Variable": "$.Item",
           "IsPresent": true,
-          "Next": "Unmarshall Data"
+          "Next": "Format Workout Lookup Data"
         }
       ],
       "Default": "Could Not Find Workout"
+    },
+    "Format Workout Lookup Data": {
+      "Type": "Pass",
+      "Next": "Load Workout Detail",
+      "Parameters": {
+        "workoutId.$": "$.Item.workoutId.S",
+        "date.$": "$.Item.date.S"
+      }
     },
     "Unmarshall Data": {
       "Type": "Task",
@@ -36,7 +83,7 @@
       "Parameters": {
         "FunctionName": "${UnmarshallItem}",
         "Payload": {
-          "item.$": "$.Item"
+          "item.$": "$.detail.Item"
         }
       },
       "Retry": [
@@ -52,7 +99,8 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Switch Notification Type"
+      "Next": "Switch Notification Type",
+      "ResultPath": "$.unmarshalled"
     },
     "Switch Notification Type": {
       "Type": "Choice",
@@ -74,7 +122,7 @@
       "Type": "Task",
       "Next": "Success",
       "Parameters": {
-        "Name.$": "$.item.scheduleName",
+        "Name.$": "$$.Execution.Input.scheduleName",
         "GroupName": "aifitness"
       },
       "Resource": "${DeleteSchedule}"
@@ -87,10 +135,10 @@
         "FunctionName": "${BuildWorkoutNotification}",
         "Payload": {
           "contactMethod": "email",
-          "workout.$": "$.item.workout",
+          "workout.$": "$.unmarshalled.Payload.workout",
           "metadata": {
-            "date.$": "$.item.date",
-            "muscleGroup.$": "$.item.muscleGroup"
+            "date.$": "$.date",
+            "muscleGroup.$": "$.unmarshalled.Payload.muscleGroup"
           }
         }
       },
@@ -140,7 +188,7 @@
       "Type": "Task",
       "Next": "Not Supported",
       "Parameters": {
-        "Name.$": "$.item.scheduleName",
+        "Name.$": "$$.Execution.Input.scheduleName",
         "GroupName": "aifitness"
       },
       "Resource": "${DeleteSchedule}"

@@ -109,8 +109,9 @@ export const getArchive = `
         muscleGroup
         equipment
         estimatedTime
-        workoutType
-        workoutId
+        type
+        id
+        difficulty
       }
     }
   }

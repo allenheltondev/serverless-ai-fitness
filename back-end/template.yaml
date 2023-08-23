@@ -58,11 +58,7 @@ Resources:
         - AttributeName: facet
           AttributeType: S
         - AttributeName: facetSortKey
-          AttributeType: S
-        - AttributeName: listType
-          AttributeType: S
-        - AttributeName: listSort
-          AttributeType: S
+          AttributeType: S        
       GlobalSecondaryIndexes:
         - IndexName: facets
           KeySchema:
@@ -71,15 +67,7 @@ Resources:
             - AttributeName: facetSortKey
               KeyType: RANGE
           Projection:
-            ProjectionType: ALL
-        - IndexName: encyclopedia
-          KeySchema: 
-            - AttributeName: listType
-              KeyType: HASH
-            - AttributeName: listSort
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+            ProjectionType: ALL        
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
 
@@ -353,7 +341,7 @@ Resources:
           Runtime:
             Name: APPSYNC_JS
             Version: 1.0.0
-          DataSource: WorkoutDataSource
+          DataSource: EncyclopediaDataSource
           CodeUri: ./resolvers/getWorkoutArchive.js
         getWorkoutByIdFunction:
           Runtime:
@@ -480,6 +468,14 @@ Resources:
   #       - !GetAtt CognitoUserPoolDomain.CloudFrontDistribution
   #     TTL: 300
   #     Type: A
+
+  FitnessEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: aifitness
+      Tags:
+        - Key: app
+          Value: aifitness
 
   TableStreamFunction:
     Type: AWS::Serverless::Function
@@ -627,12 +623,15 @@ Resources:
         EventBridgePutEvents: !Sub arn:${AWS::Partition}:states:::events:putEvents
         DeleteSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:deleteSchedule
         TableName: !Ref TableName
+        WorkoutTable: !Ref FitnessEncyclopediaTable
       Policies:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+              Resource: 
+                - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+                - !GetAtt FitnessEncyclopediaTable.Arn
             - Effect: Allow
               Action: lambda:InvokeFunction
               Resource:

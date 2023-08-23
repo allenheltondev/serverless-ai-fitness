@@ -113,9 +113,9 @@ const WorkoutArchivePage = ({ signout, user }) => {
           {(!loading && workouts.length) && (
             <Flex direction="column" >
               {workouts.map((workout, index) => (
-                <Card variation="elevated" width="100%" key={index} style={{ cursor: "pointer" }} onClick={() => router.push(`/workouts/${workout.workoutId}`)}>
+                <Card variation="elevated" width="100%" key={index} style={{ cursor: "pointer" }} onClick={() => router.push(`/workouts/${workout.id}`)}>
                   <Flex direction="column" gap=".5em" >
-                    <Text fontSize="1.1em"><b>{`${workoutTypes.find(wt => wt.value == workout.workoutType)?.name ?? 'Mystery'} Workout - ${workout.estimatedTime} minutes`}</b></Text>
+                    <Text fontSize="1.1em"><b>{`${workoutTypes.find(wt => wt.value == workout.type)?.name ?? 'Mystery'} Workout - ${workout.difficulty.charAt(0).toUpperCase() + workout.difficulty.slice(1)} Level - ${workout.estimatedTime} minutes`}</b></Text>
                     <Text><i>{`Using ${combineWithAnd(workout.equipment.split(',').map(e => e.trim()))}`}</i></Text>
                   </Flex>
                 </Card>

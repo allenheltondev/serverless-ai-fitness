@@ -25,11 +25,13 @@ type PaginatedWorkouts {
 }
 
 type PaginatedWorkout {
+  id: String
   muscleGroup: String
   equipment: String
-  workoutType: String
   estimatedTime: Int
-  workoutId: String
+  type: String
+  rating: Int
+  difficulty: String  
 }
 
 type Exercise {
