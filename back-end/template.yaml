@@ -58,7 +58,9 @@ Resources:
         - AttributeName: facet
           AttributeType: S
         - AttributeName: facetSortKey
-          AttributeType: S        
+          AttributeType: S
+        - AttributeName: customerId
+          AttributeType: S
       GlobalSecondaryIndexes:
         - IndexName: facets
           KeySchema:
@@ -67,7 +69,16 @@ Resources:
             - AttributeName: facetSortKey
               KeyType: RANGE
           Projection:
-            ProjectionType: ALL        
+            ProjectionType: ALL
+        - IndexName: payment
+          KeySchema:
+            - AttributeName: customerId
+              KeyType: HASH
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes: 
+              - subscription
+              - contact
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
 
@@ -260,11 +271,15 @@ Resources:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: "{{resolve:ssm:/serverless-toolbox/secrets}}"
+            - Effect: Allow
               Action: dynamodb:PutItem
               Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
+          SECRET_ID: "{{resolve:ssm:/serverless-toolbox/secrets}}"
       Events:
         Cognito:
           Type: Cognito
@@ -476,6 +491,30 @@ Resources:
       Tags:
         - Key: app
           Value: aifitness
+
+  HandleSubscriptionEventFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/handle-subscription-event
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:            
+            - Effect: Allow
+              Action: dynamodb:UpdateItem
+              Resource: !GetAtt FitnessTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref FitnessTable
+      Events:
+        PaymentEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref FitnessEventBus
+            Pattern:
+              source:
+                - stripe.com
+
 
   TableStreamFunction:
     Type: AWS::Serverless::Function

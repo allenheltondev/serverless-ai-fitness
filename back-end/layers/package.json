@@ -9,7 +9,8 @@
     "@aws-sdk/client-secrets-manager": "^3.262.0",
     "@aws-sdk/util-dynamodb": "^3.306.0",
     "@gomomento/sdk": "^1.34.0",
-    "openai": "^3.2.1"
+    "openai": "^3.2.1",
+    "stripe": "^13.3.0"
   },
   "files": [
     "index.js"
