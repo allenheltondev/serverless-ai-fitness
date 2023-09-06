@@ -63,7 +63,7 @@ const TitleBar = ({ toggleMenu }) => {
           {(!isMobile && isSignedIn) && (
             <Button variation="menu" onClick={() => toggleMenu()}><BiMenu size="1.5em" /></Button>
           )}
-          <Link href="https://readysetcloud.io"><Image marginTop={".5em"} maxHeight="1.5em" height="auto" maxWidth="100%" src="https://www.readysetcloud.io/images/logo.png" alt="Ready, Set, Cloud logo" /></Link>
+          <Link href="https://fitness.readysetcloud.io"><Image marginTop={".5em"} maxHeight="1.5em" height="auto" maxWidth="100%" src="https://www.readysetcloud.io/images/logo.png" alt="Ready, Set, Cloud logo" /></Link>
         </Flex>
         {isSignedIn ? <Button variation="link" onClick={(() => Auth.signOut())} padding={isMobile ? "0em" : ""}>Sign Out</Button> : <Button variation="menu" padding={isMobile ? "0em" : ""} onClick={() => Auth.federatedSignIn({ provider: CognitoHostedUIIdentityProvider.Google })}>Sign In</Button>}
       </Flex>

@@ -9,6 +9,7 @@ exports.handler = async (event) => {
     message += generateSection('Warmup', generateExerciseList(workout.warmup.exercises));
     message += generateSection('Main Set', generateSets(workout.mainSet.sets), workout.mainSet.numSets);
     message += generateSection('Abs', generateExerciseList(workout.abs.exercises), workout.abs.numSets);
+    message += `<p><a href="${metadata.detailLink}">View online version</a></p>`;
   } else if (contactMethod === 'text') {
     message += generateSectionPlainText('Warmup', generateExerciseListPlainText(workout.warmup.exercises));
     message += generateSectionPlainText('Main Set', generateSetsPlainText(workout.mainSet.sets), workout.mainSet.numSets);

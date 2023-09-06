@@ -142,6 +142,22 @@ Resources:
           RequireLowercase: true
           RequireNumbers: true
           RequireSymbols: false
+
+  FreeMembershipGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      Description: Free membership. Default group for new users
+      GroupName: Fitness-Free
+      UserPoolId: !Ref CognitoUserPool
+      Precedence: 10
+  
+  ProMembershipGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      Description: Pro membership. Includes AI-powered features
+      GroupName: Fitness-Pro
+      UserPoolId: !Ref CognitoUserPool
+      Precedence: 5
   
   AuthCertificate:
     Type: AWS::CertificateManager::Certificate

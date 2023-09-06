@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^5.0.4",
+    "@stripe/react-stripe-js": "^2.1.2",
+    "@stripe/stripe-js": "^2.1.2",
     "aws-amplify": "^5.3.3",
     "aws-amplify-react": "^5.1.43",
     "eslint": "8.38.0",

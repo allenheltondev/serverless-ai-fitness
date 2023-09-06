@@ -78,8 +78,7 @@
     },
     "Unmarshall Data": {
       "Type": "Task",
-      "Resource": "${LambdaInvoke}",
-      "OutputPath": "$.Payload",
+      "Resource": "${LambdaInvoke}",      
       "Parameters": {
         "FunctionName": "${UnmarshallItem}",
         "Payload": {
@@ -138,7 +137,8 @@
           "workout.$": "$.unmarshalled.Payload.workout",
           "metadata": {
             "date.$": "$.date",
-            "muscleGroup.$": "$.unmarshalled.Payload.muscleGroup"
+            "muscleGroup.$": "$.unmarshalled.Payload.muscleGroup",
+            "detailLink.$": "States.Format('https://fitness.readysetcloud.io/workouts/{}', $$.Execution.Input.workoutId)"
           }
         }
       },
