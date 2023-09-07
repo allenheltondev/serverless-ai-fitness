@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     case 'customer.subscription.deleted':
     case 'customer.subscription.paused':
       const freeMembership = memberships.find(m => m.level == 'free');
-      await updateUserMembership(user, freeMembership, new Date().toISOString())
+      await updateUserMembership(user, freeMembership, new Date().getTime())
       break;
   }
 };
