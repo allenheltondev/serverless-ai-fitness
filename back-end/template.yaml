@@ -79,6 +79,7 @@ Resources:
             NonKeyAttributes: 
               - subscription
               - contact
+              - username
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
 
@@ -517,11 +518,22 @@ Resources:
         - Version: 2012-10-17
           Statement:            
             - Effect: Allow
-              Action: dynamodb:UpdateItem
+              Action: dynamodb:UpdateItem                
               Resource: !GetAtt FitnessTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !Sub ${FitnessTable.Arn}/index/payment
+            - Effect: Allow
+              Action: 
+                - cognito-idp:AdminAddUserToGroup
+                - cognito-idp:AdminRemoveUserFromGroup
+              Resource: !GetAtt CognitoUserPool.Arn
       Environment:
         Variables:
           TABLE_NAME: !Ref FitnessTable
+          USER_POOL_ID: !Ref CognitoUserPool
+          PRO_MEMBERSHIP_GROUP: !Ref ProMembershipGroup
+          FREE_MEMBERSHIP_GROUP: !Ref FreeMembershipGroup
       Events:
         PaymentEvent:
           Type: EventBridgeRule
@@ -530,7 +542,6 @@ Resources:
             Pattern:
               source:
                 - stripe.com
-
 
   TableStreamFunction:
     Type: AWS::Serverless::Function

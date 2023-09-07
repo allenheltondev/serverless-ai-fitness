@@ -9,6 +9,7 @@
   "author": "allenheltondev",
   "license": "ISC",
   "devDependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.405.0",
     "@aws-sdk/client-dynamodb": "^3.386.0",
     "@aws-sdk/util-dynamodb": "^3.386.0"
   },

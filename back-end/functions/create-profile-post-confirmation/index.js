@@ -9,7 +9,7 @@ const ddb = new DynamoDBClient();
 exports.handler = async (event) => {
   try {
     const results = await Promise.allSettled([
-      await saveProfileRecord(event.request.userAttributes.sub),
+      await saveProfileRecord(event.request.userAttributes.sub, event.userName),
       await saveSettingsRecord(event.request.userAttributes.sub)
     ]);
 
@@ -35,7 +35,7 @@ exports.handler = async (event) => {
   return event;
 };
 
-const saveProfileRecord = async (userId) => {
+const saveProfileRecord = async (userId, username) => {
   const customerId = await getPaymentId(userId);
   await ddb.send(new PutItemCommand({
     TableName: process.env.TABLE_NAME,
@@ -47,6 +47,7 @@ const saveProfileRecord = async (userId) => {
       signUpDate: new Date().toISOString(),
       objective: 'weight loss',
       experienceLevel: 'beginner',
+      username,
       customerId,
       subscription: {
         level: 'free'
