@@ -190,7 +190,7 @@ const SettingsPage = () => {
             ))}
           </Flex>
           <Text marginTop="1em"><b>Available Equipment</b></Text>
-          <Text fontSize=".9rem"><i>Select the equipment you have available. Up to 3 will be randomly selected for each workout.</i></Text>
+          <Text fontSize=".9rem"><i>Select the equipment you have available.</i></Text>
           <Flex direction="row" wrap="wrap" gap=".75em">
             {equipment.map(e => (
               <ToggleButton

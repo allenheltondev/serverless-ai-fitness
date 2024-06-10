@@ -30,6 +30,21 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
     }
   };
 
+  const getFriendlyTime = (timeSeconds) => {
+    if (timeSeconds < 60) {
+      return `:${timeSeconds} - `;
+    } else {
+      const minutes = Math.floor(timeSeconds / 60);
+      let seconds = timeSeconds % 60;
+      if(seconds == 0){
+        seconds = ' min - ';
+      } else {
+        seconds = ` ${seconds.toString().padStart(2, '0')} - `;
+      }
+      return `${minutes}${seconds} `;
+    }
+  };
+
   return (
     <>
       <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
@@ -47,7 +62,12 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
           <Heading level={4}>Warmup</Heading>
           <Flex direction="row" wrap="wrap" gap=".5em" marginTop="1em">
             {detail?.workout?.warmup?.exercises?.map((exercise, exerciseIndex) => (
-              <Text key={`workout-${exerciseIndex}`} basis="48%">{`${exercise.numReps}x ${exercise.name}`}</Text>
+              <Text key={`workout-${exerciseIndex}`} basis="48%">
+                &ensp;
+                {exercise.numReps ? exercise.numReps + 'x ' : ''}
+                {exercise.timeSeconds ? getFriendlyTime(exercise.timeSeconds) : ''}
+                {exercise.name}
+              </Text>
             ))}
           </Flex>
         </Card>
@@ -58,13 +78,18 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
             {detail?.workout?.mainSet?.sets?.map((set, index) => (
               <View key={`set-${index}`}>
                 {detail?.workout?.mainSet?.sets.length > 1 ?
-                  (<Text><b>Set {index + 1}{set.exercises.some(e => e.numReps) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
-                  : (<Text><b>{set.exercises.some(e => e.numReps) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
+                  (<Text><b>Set {index + 1}{set.exercises.some(e => e.numReps || e.timeSeconds) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
+                  : (<Text><b>{set.exercises.some(e => e.numReps || e.timeSeconds) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
                 }
                 {set.exercises.map((exercise, exerciseIndex) => (
                   <Flex direction="row" gap=".4em" alignItems="center">
-                    <Text key={`set-${index}-${exerciseIndex}`}>&ensp;{exercise.numReps ? exercise.numReps + 'x ' : ''}{exercise.name}</Text>
-                    <IoInformationCircleOutline color='black' size="1em" onClick={(e) => showExerciseDefinition(exercise)}  cursor="pointer"/>
+                    <Text key={`set-${index}-${exerciseIndex}`}>
+                      &ensp;
+                      {exercise.numReps ? exercise.numReps + 'x ' : ''}
+                      {exercise.timeSeconds ? getFriendlyTime(exercise.timeSeconds) : ''}
+                      {exercise.name}
+                    </Text>
+                    <IoInformationCircleOutline color='black' size="1em" onClick={(e) => showExerciseDefinition(exercise)} cursor="pointer" />
                   </Flex>
                 ))}
               </View>
@@ -75,7 +100,12 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
           <Heading level={4}>Abs</Heading>
           <Flex direction="row" wrap="wrap" gap=".5em" marginTop="1em">
             {detail?.workout?.abs?.exercises?.map((exercise, exerciseIndex) => (
-              <Text key={`ab-${exerciseIndex}`} basis="48%">{`${exercise.numReps}x ${exercise.name}`}</Text>
+              <Text key={`ab-${exerciseIndex}`} basis="48%">
+                &ensp;
+                {exercise.numReps ? exercise.numReps + 'x ' : ''}
+                {exercise.timeSeconds ? getFriendlyTime(exercise.timeSeconds) : ''}
+                {exercise.name}
+              </Text>
             ))}
           </Flex>
         </Card>

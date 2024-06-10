@@ -57,6 +57,7 @@ export const getWorkout = `
           exercises {
             name
             numReps
+            timeSeconds
           }
         }
         mainSet {
@@ -66,6 +67,8 @@ export const getWorkout = `
             numReps
             exercises {
               name
+              numReps
+              timeSeconds
             }
           }
         }
@@ -74,6 +77,7 @@ export const getWorkout = `
           exercises {
             name
             numReps
+            timeSeconds
           }
         }
       }
@@ -128,6 +132,7 @@ export const getWorkoutById = `
           exercises {
             name
             numReps
+            timeSeconds
           }
         }
         mainSet {
@@ -138,7 +143,7 @@ export const getWorkoutById = `
             exercises {
               name
               numReps
-              duration
+              timeSeconds
             }
           }
         }
@@ -147,6 +152,7 @@ export const getWorkoutById = `
           exercises {
             name
             numReps
+            timeSeconds
           }
         }
       }
@@ -166,6 +172,7 @@ export const getWorkoutByDate = `
           exercises {
             name
             numReps
+            timeSeconds
           }
         }
         mainSet {
@@ -176,7 +183,7 @@ export const getWorkoutByDate = `
             exercises {
               name
               numReps
-              duration
+              timeSeconds
             }
           }
         }
@@ -185,6 +192,7 @@ export const getWorkoutByDate = `
           exercises {
             name
             numReps
+            timeSeconds
           }
         }
       }

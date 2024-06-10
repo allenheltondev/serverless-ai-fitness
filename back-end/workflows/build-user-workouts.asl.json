@@ -183,8 +183,8 @@
             "Parameters": {
               "FunctionName": "${AskChatGPT}",
               "Payload": {
-                "model": "gpt-4-1106-preview",
-                "systemContext": "You are an expert fitness trainer. You build unique and creative, yet effective workouts that accomplish the user's goals and fit in the given time frame. You provide varied yet consistent workouts to build cohesive workout programs. Each workout you create should have exercise variance in the warmup, main set, and abs.",
+                "model": "gpt-4-turbo",
+                "systemContext": "You are an expert fitness trainer. You build unique, creative, powerful, and effective workouts that accomplish the trainee's goals and fit in the given time frame. You provide varied yet consistent workouts to build cohesive workout programs. Each workout you create should have exercise variance in the warmup, main set, and abs.",
                 "query.$": "$.workout.prompt",
                 "conversationKey.$": "$$.Execution.Id",
                 "schema": {
@@ -240,40 +240,54 @@
                                 "type": "array",
                                 "description": "Defines all the exercises to perform in a set",
                                 "items": {
-                                  "type": "object",
-                                  "required": [
-                                    "name"
-                                  ],
-                                  "properties": {
-                                    "name": {
-                                      "type": "string",
-                                      "description": "Name of the exercise"
+                                  "allOf": [
+                                    {
+                                      "type": "object",
+                                      "required": [
+                                        "name", "description"
+                                      ],
+                                      "properties": {
+                                        "name": {
+                                          "type": "string",
+                                          "description": "Name of the exercise"
+                                        },
+                                        "description": {
+                                          "type": "string",
+                                          "description": "Describes how to perform the exercise"
+                                        }
+                                      }
                                     },
-                                    "description": {
-                                      "type": "string",
-                                      "description": "Describes how to perform the exercise"
-                                    },
-                                    "numReps": {
-                                      "type": "integer",
-                                      "description": "Used to indicate how many reps to do of this specific exercise. Used if all exercises in the set do not have the same number of reps, otherwise omitted."
+                                    {
+                                      "oneOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "numReps": {
+                                              "type": "integer",
+                                              "description": "Number of reps to perform"
+                                            }
+                                          },
+                                          "required": [
+                                            "numReps"
+                                          ]
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "timeSeconds": {
+                                              "type": "integer",
+                                              "description": "Number of seconds to do exercise"
+                                            }
+                                          },
+                                          "required": [
+                                            "timeSeconds"
+                                          ]
+                                        }
+                                      ]
                                     }
-                                  }
+                                  ]
                                 }
                               }
-                            }
-                          }
-                        },
-                        "timeBased": {
-                          "type": "object",
-                          "description": "Properties specific to time-based workouts like AMRAP and EMOM",
-                          "properties": {
-                            "totalTime": {
-                              "type": "integer",
-                              "description": "Total time in seconds for the workout"
-                            },
-                            "intervalTime": {
-                              "type": "integer",
-                              "description": "Time in seconds for EMOM intervals"
                             }
                           }
                         }
@@ -287,20 +301,47 @@
                           "type": "array",
                           "minItems": 1,
                           "items": {
-                            "type": "object",
-                            "properties": {
-                              "name": {
-                                "type": "string",
-                                "description": "Name of the exercise"
+                            "allOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "description": "Name of the exercise"
+                                  }
+                                },
+                                "required": [
+                                  "name"
+                                ]
                               },
-                              "numReps": {
-                                "type": "integer",
-                                "description": "Number of reps to perform"
+                              {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "numReps": {
+                                        "type": "integer",
+                                        "description": "Number of reps to perform"
+                                      }
+                                    },
+                                    "required": [
+                                      "numReps"
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "timeSeconds": {
+                                        "type": "integer",
+                                        "description": "Number of seconds to do exercise"
+                                      }
+                                    },
+                                    "required": [
+                                      "timeSeconds"
+                                    ]
+                                  }
+                                ]
                               }
-                            },
-                            "required": [
-                              "name",
-                              "numReps"
                             ]
                           }
                         }
@@ -319,20 +360,47 @@
                           "type": "array",
                           "minItems": 1,
                           "items": {
-                            "type": "object",
-                            "properties": {
-                              "name": {
-                                "type": "string",
-                                "description": "Name of the exercise"
+                            "allOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "description": "Name of the exercise"
+                                  }
+                                },
+                                "required": [
+                                  "name"
+                                ]
                               },
-                              "numReps": {
-                                "type": "integer",
-                                "description": "Number of reps to perform"
+                              {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "numReps": {
+                                        "type": "integer",
+                                        "description": "Number of reps to perform"
+                                      }
+                                    },
+                                    "required": [
+                                      "numReps"
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "timeSeconds": {
+                                        "type": "integer",
+                                        "description": "Number of seconds to do exercise"
+                                      }
+                                    },
+                                    "required": [
+                                      "timeSeconds"
+                                    ]
+                                  }
+                                ]
                               }
-                            },
-                            "required": [
-                              "name",
-                              "numReps"
                             ]
                           }
                         }
