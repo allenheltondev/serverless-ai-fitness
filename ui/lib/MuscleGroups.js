@@ -26,6 +26,14 @@ const muscleGroupList = [
   {
     name: 'Cardio',
     value: 'cardio'
+  },
+  {
+    name: 'Boxing',
+    value: 'boxing'
+  },
+  {
+    name: 'Kickboxing',
+    value: 'kickboxing'
   }
 ];
 

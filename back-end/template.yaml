@@ -6,7 +6,7 @@ Description: >
 Parameters:
   TableName:
     Type: String
-    Default: ai-fitness    
+    Default: ai-fitness
   ContactEmail:
     Type: String
     Description: Email address to send workout emails to
@@ -15,7 +15,7 @@ Parameters:
     Description: Client id for SSO with Google
   GoogleClientSecret:
     Type: String
-    Description: Client secret for SSO with Google  
+    Description: Client secret for SSO with Google
   HostedZoneId:
     Type: String
     Description: Id of the hosted zone for the root domain
@@ -44,7 +44,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Ref TableName
-      BillingMode: PAY_PER_REQUEST      
+      BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: pk
           KeyType: HASH
@@ -54,7 +54,7 @@ Resources:
         - AttributeName: pk
           AttributeType: S
         - AttributeName: sk
-          AttributeType: S       
+          AttributeType: S
         - AttributeName: facet
           AttributeType: S
         - AttributeName: facetSortKey
@@ -76,7 +76,7 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: INCLUDE
-            NonKeyAttributes: 
+            NonKeyAttributes:
               - subscription
               - contact
               - username
@@ -86,7 +86,7 @@ Resources:
   FitnessEncyclopediaTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      BillingMode: PAY_PER_REQUEST      
+      BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: pk
           KeyType: HASH
@@ -96,7 +96,7 @@ Resources:
         - AttributeName: pk
           AttributeType: S
         - AttributeName: sk
-          AttributeType: S       
+          AttributeType: S
         - AttributeName: listType
           AttributeType: S
         - AttributeName: listSort
@@ -151,7 +151,7 @@ Resources:
       GroupName: Fitness-Free
       UserPoolId: !Ref CognitoUserPool
       Precedence: 10
-  
+
   ProMembershipGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
@@ -159,7 +159,7 @@ Resources:
       GroupName: Fitness-Pro
       UserPoolId: !Ref CognitoUserPool
       Precedence: 5
-  
+
   AuthCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
@@ -260,16 +260,16 @@ Resources:
           Version: 2012-10-17
           Statement:
           - Effect: Allow
-            Action: 
+            Action:
               - s3:PutObject
               - s3:GetObject
               - s3:DeleteObject
-            Resource: 
+            Resource:
               - !Sub arn:aws:s3:::${AiFitnessUserFilesBucket}/*
           - Effect: Allow
-            Action: 
+            Action:
               - appsync:GraphQL
-            Resource: 
+            Resource:
               - !Ref FitnessGQL
 
   CognitoIdentityPoolRoles:
@@ -324,7 +324,7 @@ Resources:
           Properties:
             Trigger: PostAuthentication
             UserPool: !Ref CognitoUserPool
-          
+
   AiFitnessUserFilesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -356,7 +356,7 @@ Resources:
           EncyclopediaDataSource:
             TableName: !Ref FitnessEncyclopediaTable
             TableArn: !GetAtt FitnessEncyclopediaTable.Arn
-      Functions:       
+      Functions:
         getWorkout:
           Runtime:
             Name: APPSYNC_JS
@@ -416,9 +416,15 @@ Resources:
             Name: APPSYNC_JS
             Version: 1.0.0
           DataSource: WorkoutDataSource
-          CodeUri: ./resolvers/getWorkoutId.js        
+          CodeUri: ./resolvers/getWorkoutId.js
+        getExerciseFunction:
+          Runtime:
+            Name: APPSYNC_JS
+            Version: 1.0.0
+          DataSource: EncyclopediaDataSource
+          CodeUri: ./resolvers/getExercise.js
       Resolvers:
-        Query:          
+        Query:
           getWorkoutByDate:
             Runtime:
               Name: APPSYNC_JS
@@ -468,6 +474,12 @@ Resources:
               Version: 1.0.0
             Pipeline:
               - getWorkoutArchiveFunction
+          getExerciseDefinition:
+            Runtime:
+              Name: APPSYNC_JS
+              Version: 1.0.0
+            Pipeline:
+              - getExerciseFunction
         Mutation:
           updateProfile:
             Runtime:
@@ -490,7 +502,7 @@ Resources:
       DomainValidationOptions:
         - DomainName: !Sub graphql.${RootDomainName}
           HostedZoneId: !Ref HostedZoneId
- 
+
   # GQLCustomDomainDnsRecord:
   #   Type: AWS::Route53::RecordSet
   #   Properties:
@@ -516,15 +528,15 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
-          Statement:            
+          Statement:
             - Effect: Allow
-              Action: dynamodb:UpdateItem                
+              Action: dynamodb:UpdateItem
               Resource: !GetAtt FitnessTable.Arn
             - Effect: Allow
               Action: dynamodb:Query
               Resource: !Sub ${FitnessTable.Arn}/index/payment
             - Effect: Allow
-              Action: 
+              Action:
                 - cognito-idp:AdminAddUserToGroup
                 - cognito-idp:AdminRemoveUserFromGroup
               Resource: !GetAtt CognitoUserPool.Arn
@@ -607,11 +619,36 @@ Resources:
           SECRET_ID: "{{resolve:ssm:/serverless-toolbox/secrets}}"
           TABLE_NAME: !Ref FitnessEncyclopediaTable
 
+  SaveExerciseDescriptionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/save-exercise-descriptions
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:BatchWriteItem
+              Resource: !GetAtt FitnessEncyclopediaTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref FitnessEncyclopediaTable
+
   WorkoutApi:
     Type: AWS::Serverless::Api
     Properties:
       TracingEnabled: true
-      StageName: dev
+      StageName: v1
+      Auth:
+        Authorizers:
+          CognitoAuth:
+            AuthorizationScopes:
+              - email
+              - openid
+              - profile
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+        DefaultAuthorizer: CognitoAuth
+        AddDefaultAuthorizerToCorsPreflight: false
       DefinitionBody:
         Fn::Transform:
           Name: AWS::Include
@@ -640,6 +677,29 @@ Resources:
             Path: /workouts
             Method: GET
 
+  CreateCheckoutSessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/create-checkout-session
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt FitnessTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+          BASE_URL: !Sub https://fitness.${RootDomainName}
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WorkoutApi
+            Path: /checkout-sessions
+            Method: POST
+
   BuildWorkoutNotificationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -657,7 +717,7 @@ Resources:
           Statement:
             - Effect: Allow
               Action: dynamodb:PutItem
-              Resource: 
+              Resource:
                 - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
                 - !GetAtt FitnessEncyclopediaTable.Arn
       Environment:
@@ -695,7 +755,7 @@ Resources:
           Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: 
+              Resource:
                 - !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
                 - !GetAtt FitnessEncyclopediaTable.Arn
             - Effect: Allow
@@ -726,7 +786,7 @@ Resources:
         Destinations:
           - CloudWatchLogsLogGroup:
               LogGroupArn: !GetAtt NotificationLogGroup.Arn
-  
+
   NotificationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -739,14 +799,14 @@ Resources:
       DefinitionSubstitutions:
         DynamoDbQuery: !Sub arn:${AWS::Partition}:states:::aws-sdk:dynamodb:query
         SFNStartExecution: !Sub arn:${AWS::Partition}:states:::states:startExecution
-        BuildUserWorkoutsStateMachine: !Ref BuildUserWorkoutsStateMachine     
+        BuildUserWorkoutsStateMachine: !Ref BuildUserWorkoutsStateMachine
         TableName: !Ref TableName
       Policies:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
               Action: dynamodb:Query
-              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/facets            
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}/index/facets
             - Effect: Allow
               Action: states:StartExecution
               Resource: !Ref BuildUserWorkoutsStateMachine
@@ -772,11 +832,12 @@ Resources:
         SchedulerGetSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:getSchedule
         SchedulerUpdateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:updateSchedule
         SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
+        SaveExerciseDescriptions: !GetAtt SaveExerciseDescriptionsFunction.Arn
         TableName: !Ref TableName
         WorkoutTable: !Ref FitnessEncyclopediaTable
       Policies:
         - Version: 2012-10-17
-          Statement:            
+          Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
               Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
@@ -787,11 +848,12 @@ Resources:
                 - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
                 - !GetAtt SaveToDynamoDBFunction.Arn
                 - !GetAtt GetRandomWorkoutOfTypeFunction.Arn
+                - !GetAtt SaveExerciseDescriptionsFunction.Arn
             - Effect: Allow
               Action: iam:PassRole
               Resource: !GetAtt SendNotificationSchedulerRole.Arn
             - Effect: Allow
-              Action: 
+              Action:
                 - scheduler:CreateSchedule
                 - scheduler:GetSchedule
                 - scheduler:UpdateSchedule
@@ -812,9 +874,9 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Effect: Allow 
+          - Effect: Allow
             Principal:
-              Service: 
+              Service:
                 - scheduler.amazonaws.com
             Action: sts:AssumeRole
       Policies:

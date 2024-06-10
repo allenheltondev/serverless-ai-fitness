@@ -183,12 +183,18 @@
             "Parameters": {
               "FunctionName": "${AskChatGPT}",
               "Payload": {
-                "systemContext": "You are an expert fitness trainer with a strong desire to help people reach their goals. Your expertise is creative yet effective workouts that hit the time the user wants.",
+                "model": "gpt-4-1106-preview",
+                "systemContext": "You are an expert fitness trainer. You build unique and creative, yet effective workouts that accomplish the user's goals and fit in the given time frame. You provide varied yet consistent workouts to build cohesive workout programs. Each workout you create should have exercise variance in the warmup, main set, and abs.",
                 "query.$": "$.workout.prompt",
+                "conversationKey.$": "$$.Execution.Id",
                 "schema": {
                   "$schema": "http://json-schema.org/draft-07/schema#",
                   "type": "object",
                   "properties": {
+                    "equipmentUsed": {
+                      "type": "string",
+                      "description": "Comma separated list of the used equipment"
+                    },
                     "mainSet": {
                       "type": "object",
                       "required": [
@@ -346,11 +352,13 @@
                   "Lambda.ServiceException",
                   "Lambda.AWSLambdaException",
                   "Lambda.SdkClientException",
-                  "Lambda.TooManyRequestsException"
+                  "Lambda.TooManyRequestsException",
+                  "RateLimitExceeded",
+                  "ResponseFormatError"
                 ],
-                "IntervalSeconds": 2,
+                "IntervalSeconds": 5,
                 "MaxAttempts": 6,
-                "BackoffRate": 2
+                "BackoffRate": 10
               }
             ],
             "ResultPath": "$.chatgpt",
@@ -358,7 +366,8 @@
             "Catch": [
               {
                 "ErrorEquals": [
-                  "RateLimitExceeded"
+                  "RateLimitExceeded",
+                  "ResponseFormatError"
                 ],
                 "ResultPath": null,
                 "Next": "Get Existing Workout"
@@ -374,7 +383,7 @@
               "notificationDate.$": "$.workout.notificationDate",
               "canSendNotification.$": "$.workout.canSendNotification",
               "muscleGroup.$": "$.workout.muscleGroup",
-              "equipment.$": "$.workout.equipment",
+              "equipment.$": "$.chatgpt.Payload.response.equipmentUsed",
               "workoutType.$": "$.workout.workoutType",
               "workout.$": "$.chatgpt.Payload.response",
               "workoutId.$": "States.UUID()",
@@ -437,6 +446,7 @@
             "Type": "Task",
             "Next": "Save Workout to User",
             "Parameters": {
+              "ActionAfterCompletion": "DELETE",
               "FlexibleTimeWindow": {
                 "Mode": "OFF"
               },
@@ -447,7 +457,7 @@
               "Target": {
                 "Arn": "${SendWorkoutNotification}",
                 "RoleArn": "${SendWorkoutNotificationRole}",
-                "Input": {                 
+                "Input": {
                   "contact": {
                     "type.$": "$.user.contact.M.type.S",
                     "value.$": "$.user.contact.M.email.S"
@@ -465,6 +475,7 @@
             "Type": "Task",
             "Next": "Save Workout to User",
             "Parameters": {
+              "ActionAfterCompletion": "DELETE",
               "FlexibleTimeWindow": {
                 "Mode": "OFF"
               },
@@ -475,7 +486,7 @@
               "Target": {
                 "Arn": "${SendWorkoutNotification}",
                 "RoleArn": "${SendWorkoutNotificationRole}",
-                "Input": {                 
+                "Input": {
                   "contact": {
                     "type.$": "$.user.contact.M.type.S",
                     "value.$": "$.user.contact.M.email.S"
@@ -539,7 +550,7 @@
                     "BooleanEquals": true
                   }
                 ],
-                "Next": "Save Workout to Encyclopedia"
+                "Next": "Save Workout Details"
               }
             ],
             "Default": "Do Not Save"
@@ -548,43 +559,86 @@
             "Type": "Pass",
             "End": true
           },
-          "Save Workout to Encyclopedia": {
-            "Type": "Task",
-            "Resource": "${LambdaInvoke}",
-            "Parameters": {
-              "FunctionName": "${SaveToDynamoDB}",
-              "Payload": {
-                "tableName": "${WorkoutTable}",
-                "item": {
-                  "pk.$": "$.workoutId",
-                  "sk": "workout",
-                  "listType": "workout",
-                  "listSort.$": "States.Format('{}#{}', $.muscleGroup, $.difficulty)",
-                  "muscleGroup.$": "$.muscleGroup",
-                  "equipment.$": "$.equipment",
-                  "type.$": "$.workoutType",
-                  "estimatedTime.$": "$.estimatedTime",
-                  "difficulty.$": "$.difficulty",
-                  "rating": 0,
-                  "workout.$": "$.workout"
+          "Save Workout Details": {
+            "Type": "Parallel",
+            "Branches": [
+              {
+                "StartAt": "Save Workout to Encyclopedia",
+                "States": {
+                  "Save Workout to Encyclopedia": {
+                    "Type": "Task",
+                    "Resource": "${LambdaInvoke}",
+                    "Parameters": {
+                      "FunctionName": "${SaveToDynamoDB}",
+                      "Payload": {
+                        "tableName": "${WorkoutTable}",
+                        "item": {
+                          "pk.$": "$.workoutId",
+                          "sk": "workout",
+                          "listType": "workout",
+                          "listSort.$": "States.Format('{}#{}', $.muscleGroup, $.difficulty)",
+                          "muscleGroup.$": "$.muscleGroup",
+                          "equipment.$": "$.equipment",
+                          "type.$": "$.workoutType",
+                          "estimatedTime.$": "$.estimatedTime",
+                          "difficulty.$": "$.difficulty",
+                          "rating": 0,
+                          "workout.$": "$.workout"
+                        }
+                      }
+                    },
+                    "Retry": [
+                      {
+                        "ErrorEquals": [
+                          "Lambda.ServiceException",
+                          "Lambda.AWSLambdaException",
+                          "Lambda.SdkClientException",
+                          "Lambda.TooManyRequestsException"
+                        ],
+                        "IntervalSeconds": 2,
+                        "MaxAttempts": 6,
+                        "BackoffRate": 2
+                      }
+                    ],
+                    "ResultPath": null,
+                    "End": true
+                  }
+                }
+              },
+              {
+                "StartAt": "Save Exercise Details",
+                "States": {
+                  "Save Exercise Details": {
+                    "Type": "Task",
+                    "Resource": "${LambdaInvoke}",
+                    "Parameters": {
+                      "FunctionName": "${SaveExerciseDescriptions}",
+                      "Payload": {
+                        "mainSet.$": "$.workout.mainSet",
+                        "muscleGroup.$": "$.muscleGroup"
+                      }
+                    },
+                    "Retry": [
+                      {
+                        "ErrorEquals": [
+                          "Lambda.ServiceException",
+                          "Lambda.AWSLambdaException",
+                          "Lambda.SdkClientException",
+                          "Lambda.TooManyRequestsException"
+                        ],
+                        "IntervalSeconds": 1,
+                        "MaxAttempts": 3,
+                        "BackoffRate": 2
+                      }
+                    ],
+                    "End": true,
+                    "ResultPath": null
+                  }
                 }
               }
-            },
-            "Retry": [
-              {
-                "ErrorEquals": [
-                  "Lambda.ServiceException",
-                  "Lambda.AWSLambdaException",
-                  "Lambda.SdkClientException",
-                  "Lambda.TooManyRequestsException"
-                ],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 6,
-                "BackoffRate": 2
-              }
             ],
-            "ResultPath": null,
-            "End": true
+            "End": true,
+            "ResultPath": null
           }
         }
       },
@@ -593,6 +647,7 @@
         "user.$": "$.profile.Item",
         "workout.$": "$$.Map.Item.Value"
       },
+      "MaxConcurrency": 1,
       "End": true
     }
   }

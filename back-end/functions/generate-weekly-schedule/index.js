@@ -1,15 +1,15 @@
 let muscleGroups = ['chest', 'arm', 'shoulder', 'back', 'leg'];
 let workoutTypes = [
-  { description: 'circuit workout', shortDescription: 'Circuit'}, 
-  { description: 'workout structured in supersets', shortDescription: 'Supersets'}, 
-  { description: 'workout', shortDescription: 'Standard Workout'}
+  { description: 'as a circuit', shortDescription: 'Circuit'},
+  { description: 'in supersets', shortDescription: 'Supersets'},
+  { description: 'normally', shortDescription: 'Standard Workout'}
 ];
 
 let equipment = [
-  { type: 'barbells', threshold: .9 }, 
-  { type: 'dumbbells', threshold: .75 }, 
-  { type: 'kettlebells', threshold: .3 }, 
-  { type: 'medicine balls', threshold: .3 }, 
+  { type: 'barbells', threshold: .9 },
+  { type: 'dumbbells', threshold: .75 },
+  { type: 'kettlebells', threshold: .3 },
+  { type: 'medicine balls', threshold: .3 },
   { type: 'battle ropes', threshold: .15 },
   { type: 'bodyweight exercises', threshold: .35 }
 ];
@@ -76,7 +76,7 @@ const buildChatGptRequest = (muscleGroup) => {
 
   equipmentToUse = pickThree(equipmentToUse);
   const workoutEquipment = joinWithAnd(equipmentToUse);
-  const request = `Create ${muscleGroup == 'arm' ? `an arm` : `a ${muscleGroup}`} ${workoutType.description} that utilizes ${workoutEquipment}. I need the main set only. Ideally this workout takes about 40 minutes to complete and uses both traditional and creative exercises.`;
+  const request = `Create a ${muscleGroup} workout structured ${workoutType.description} that utilizes ${workoutEquipment}. I need the main set only. Ideally this workout takes about 40 minutes to complete and uses both traditional and creative exercises.`;
 
   return { type: workoutType.shortDescription, request, equipment: workoutEquipment };
 };

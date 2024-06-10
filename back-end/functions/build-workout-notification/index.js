@@ -36,7 +36,7 @@ const generateSets = (sets) => {
   sets.forEach((set, index) => {
     const setNumber = index + 1;
     setsContent += `
-      <h3>Set ${setNumber} - ${set.numReps} reps</h3>
+      <h3>Set ${setNumber}${set.numReps ? ' - ' + set.numReps + ' reps' : ''}</h3>
       ${generateExerciseList(set.exercises)}
     `;
   });

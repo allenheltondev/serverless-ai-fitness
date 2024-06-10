@@ -78,7 +78,7 @@
     },
     "Unmarshall Data": {
       "Type": "Task",
-      "Resource": "${LambdaInvoke}",      
+      "Resource": "${LambdaInvoke}",
       "Parameters": {
         "FunctionName": "${UnmarshallItem}",
         "Payload": {
@@ -134,10 +134,10 @@
         "FunctionName": "${BuildWorkoutNotification}",
         "Payload": {
           "contactMethod": "email",
-          "workout.$": "$.unmarshalled.Payload.workout",
+          "workout.$": "$.unmarshalled.Payload.item.workout",
           "metadata": {
             "date.$": "$.date",
-            "muscleGroup.$": "$.unmarshalled.Payload.muscleGroup",
+            "muscleGroup.$": "$.unmarshalled.Payload.item.muscleGroup",
             "detailLink.$": "States.Format('https://fitness.readysetcloud.io/workouts/{}', $$.Execution.Input.workoutId)"
           }
         }

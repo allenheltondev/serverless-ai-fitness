@@ -1,4 +1,5 @@
 const { unmarshall } = require('@aws-sdk/util-dynamodb');
+const FIGHTING_WORKOUTS = ['boxing', 'kickboxing'];
 
 const PROFILE_DEFAULTS = {
   objective: 'weight loss',
@@ -40,7 +41,7 @@ exports.handler = async (state) => {
       if (!muscleGroups.length) {
         muscleGroups = shuffleArray([...settings.muscleGroups]);
       }
-      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel ?? 'beginner', profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime, settings.specialWorkouts);
+      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel ?? 'beginner', profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
       workout.date = date.toISOString();
@@ -66,7 +67,7 @@ exports.handler = async (state) => {
   return workouts.map(w => formatWorkout(w));
 };
 
-const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workoutTypes, muscleGroup, targetTime, specialWorkouts) => {
+const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workoutTypes, muscleGroup, targetTime) => {
   const workout = {
     day,
     muscleGroup,
@@ -78,33 +79,51 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
     difficulty: experienceLevel
   };
 
-  const isSpecialDay = isSpecialWorkoutDay(specialWorkouts, day);
-  if (isSpecialDay && Math.random() <= specialWorkouts.percentChance / 100) {
-    workout.equipment = [specialWorkouts.equipment[Math.floor(Math.random() * specialWorkouts.equipment.length)]];
-    workout.objective = specialWorkouts.objective;
-    delete workout.workoutType;
-    workout.muscleGroup = 'special workout';
+  let prompt;
+  if(FIGHTING_WORKOUTS.includes(workout.muscleGroup)){
+    prompt = getFightingPrompt(workout);
+  } else {
+    prompt = getWeightPrompt(workout);
   }
 
-  workout.prompt = `Create a ${workout.workoutType?.type || ''} workout ${workout.workoutType?.modifier || ''} for ` +
-    `${workout.objective} ${workout.workoutType ? 'targeting the ' + workout.muscleGroup : ''} using ${workout.equipment.join(', ')}.` +
-    ` It should be a ${workout.experienceLevel}-level workout that takes ${workout.targetTime} minutes to complete the main set. ` +
-    `Also create a dynamic warmup with 6 or more related exercises for this workout and an ab set with related moves for afterward.`;
-
+  workout.prompt = prompt;
   return workout;
 };
 
-const isSpecialWorkoutDay = (specialWorkouts, day) => specialWorkouts?.days.find(d => d == day);
+const getWorkoutTypeDescription = (type) => {
+  switch (type?.toLowerCase()) {
+    case 'superset':
+      return 'in supersets';
+    case 'circuit':
+      return 'as a circuit';
+    default:
+      return 'as a standard workout';
+  };
+};
+
+const getObjectiveDescription = (objective) => {
+  switch (objective?.toLowerCase()) {
+    case 'muscle building':
+      return 'hypertrophy';
+    case 'strength training':
+      return 'muscular strength training';
+    case 'weight loss':
+      return 'fat loss';
+    case 'building endurance':
+      return 'cardiovascular endurance training';
+    case 'stress reduction':
+      return 'stress management';
+    default:
+      return objective ?? '';
+  }
+};
 
 const getEquipment = (equipment) => {
   if (!equipment || equipment.length === 0) {
-    return ['bodyweight'];
+    return 'bodyweight';
   }
 
-  const shuffledEquipment = [...equipment].sort(() => 0.5 - Math.random());
-  const numberOfEquipment = Math.min(Math.floor(Math.random() * 3) + 1, shuffledEquipment.length);
-
-  return shuffledEquipment.slice(0, numberOfEquipment).map(item => item.type);
+  return equipment.map(e => e.type).join(', ');
 };
 
 
@@ -122,10 +141,25 @@ const formatWorkout = (workout) => {
     notificationDate: workout.notificationDate,
     canSendNotification: workout.canSendNotification,
     muscleGroup: workout.muscleGroup,
-    equipment: workout.equipment.join(', '),
-    workoutType: workout.workoutType?.type || 'special workout',
+    workoutType: workout.workoutType?.type || 'normal workout',
     prompt: workout.prompt,
     targetTime: workout.targetTime,
     difficulty: workout.difficulty
   };
 };
+
+
+const getWeightPrompt = (workout) => {
+  return `Create a ${workout.muscleGroup} workout structured ${getWorkoutTypeDescription(workout.workoutType?.type)} designed for
+  ${getObjectiveDescription(workout.objective)}. I have ${workout.equipment} as available equipment but you don't have to use everying.
+  Include what equipment you used in your response as a comma separated list. This should be a ${workout.experienceLevel}-level workout that
+  takes about ${workout.targetTime} minutes to complete the main set. Include at least 1 uncommon exercise in the workout. Also create a dynamic
+  calisthenic warmup with 6 or more related exercises for this workout and an ab set with 5 or more exercises for afterward. Abs should be
+  varied from other workouts you created for maximum effectiveness.`;
+};
+
+const getFightingPrompt = (workout) => {
+  return `Create a ${workout.muscleGroup} workout for a ${workout.experienceLevel}-level athlete that takes ${workout.targetTime} for the main set.
+  Only include equipment from this list and/or bodyweight (but you don't have to use all equipment): ${workout.equipment}. Create a relevant
+  calisthenic warmup and unique ab set cooldown. Vary the abs from other workouts.`;
+}

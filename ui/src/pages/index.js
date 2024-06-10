@@ -73,7 +73,7 @@ const Home = ({ signout, user }) => {
   }
 
   return (
-    <Authenticator socialProviders={["google"]}>
+    <Authenticator socialProviders={["google"]} variation="modal">
       {({ signOut, user }) => (
         <Flex direction="column" width="100%">
           <Head>
@@ -83,7 +83,7 @@ const Home = ({ signout, user }) => {
             <Alert variation="warning" hasIcon={true} isDismissible={false} heading="Update needed">
               Looks like you still need some configuration. Head over to <Link href="/settings">settings</Link> to finish setting up!
             </Alert>
-          )}         
+          )}
           {workoutDetail?.workout && (
             <Workout detail={workoutDetail} date={date} />
           )}

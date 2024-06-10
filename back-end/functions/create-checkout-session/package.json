@@ -1,0 +1,16 @@
+{
+  "name": "create-checkout-session",
+  "version": "1.0.0",
+  "description": "Creates a new Stripe checkout session",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "allenheltondev",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.417.0",
+    "@aws-sdk/util-dynamodb": "^3.417.0",
+    "stripe": "^13.6.0"
+  }
+}

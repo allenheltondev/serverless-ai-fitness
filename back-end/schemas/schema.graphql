@@ -12,6 +12,7 @@ type Query {
   getMyProfile: Profile
   getMySettings: Settings
   isUserConfigured: Boolean
+  getExerciseDefinition(exercise: String!): ExerciseDefinition
 }
 
 type Mutation {
@@ -31,7 +32,7 @@ type PaginatedWorkout {
   estimatedTime: Int
   type: String
   rating: Int
-  difficulty: String  
+  difficulty: String
 }
 
 type Exercise {
@@ -116,7 +117,7 @@ input WorkoutTypeInput {
 }
 
 input SettingsInput {
-  equipment: [EquipmentInput!]  
+  equipment: [EquipmentInput!]
   muscleGroups: [String!]
   frequency: [String]
   workoutTypes: [WorkoutTypeInput!]
@@ -126,7 +127,7 @@ input SettingsInput {
 
 input ProfileInput {
   contact: ContactInput
-  demographics: DemographicsInput  
+  demographics: DemographicsInput
   objective: String
   experienceLevel: String
 }
@@ -148,7 +149,7 @@ input DemographicsInput {
 }
 
 type Settings {
-  equipment: [Equipment!]  
+  equipment: [Equipment!]
   muscleGroups: [String!]
   frequency: [String]
   workoutTypes: [WorkoutType!]
@@ -211,4 +212,14 @@ type UserSpecialWorkouts {
   percentChance: Int!
   equipment: [String!]!
   objective: String!
+}
+
+input ExerciseDefinitionInput {
+  exercise: String!
+}
+
+type ExerciseDefinition {
+  name: String!
+  muscleGroup: String!
+  description: String!
 }

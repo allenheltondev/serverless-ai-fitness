@@ -89,7 +89,7 @@ const WorkoutArchivePage = ({ signout, user }) => {
 
 
   return (
-    <Authenticator socialProviders={["google"]}>
+    <Authenticator socialProviders={["google"]} variation="modal">
       {({ signOut, user }) => (
         <Flex direction="column" width="100%">
           <Head>

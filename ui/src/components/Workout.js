@@ -1,10 +1,35 @@
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Alert, Heading, Text, View, Card, Flex } from '@aws-amplify/ui-react';
 import { getWorkoutHeading, getWorkoutEquipment } from '../util/formatters';
 import { BiArrowBack } from 'react-icons/bi';
+import { IoInformationCircleOutline } from "react-icons/io5";
+import { getExerciseDefinition } from '../graphql/queries';
+import { API } from 'aws-amplify';
+import Popup from './Popup';
 
 const Workout = ({ detail, date, showGoBack, backDestination }) => {
   const router = useRouter();
+  const [definition, setDefinition] = useState({ title: '', description: '' });
+
+  const showExerciseDefinition = async (exercise) => {
+    try {
+      const exerciseDefinition = await API.graphql({
+        query: getExerciseDefinition,
+        variables: {
+          exercise: exercise.name
+        }
+      });
+      const { description: def } = exerciseDefinition.data.getExerciseDefinition;
+
+      setDefinition({ title: exercise.name, description: def });
+
+    } catch (err) {
+      console.error(err);
+      setDefinition({ title: '', description: '' });
+    }
+  };
+
   return (
     <>
       <Alert backgroundColor={"var(--primary)"} hasIcon={false} isDismissible={false}>
@@ -37,7 +62,10 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
                   : (<Text><b>{set.exercises.some(e => e.numReps) ? '' : ' - ' + set.numReps + ' reps'}</b></Text>)
                 }
                 {set.exercises.map((exercise, exerciseIndex) => (
-                  <Text key={`set-${index}-${exerciseIndex}`}>&ensp;{exercise.numReps ? exercise.numReps + 'x ' : ''}{exercise.name}</Text>
+                  <Flex direction="row" gap=".4em" alignItems="center">
+                    <Text key={`set-${index}-${exerciseIndex}`}>&ensp;{exercise.numReps ? exercise.numReps + 'x ' : ''}{exercise.name}</Text>
+                    <IoInformationCircleOutline color='black' size="1em" onClick={(e) => showExerciseDefinition(exercise)}  cursor="pointer"/>
+                  </Flex>
                 ))}
               </View>
             ))}
@@ -51,9 +79,12 @@ const Workout = ({ detail, date, showGoBack, backDestination }) => {
             ))}
           </Flex>
         </Card>
+        {definition.title && (
+          <Popup title={definition.title} description={definition.description} onClose={(e) => setDefinition({ title: '' })} />
+        )}
       </View>
     </>
-  )
+  );
 };
 
 export default Workout;

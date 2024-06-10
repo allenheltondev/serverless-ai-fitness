@@ -16,7 +16,7 @@ export const getMyProfile = `
         weight
       }
       objective
-      experienceLevel      
+      experienceLevel
     }
   }
 `;
@@ -65,7 +65,7 @@ export const getWorkout = `
           sets {
             numReps
             exercises {
-              name            
+              name
             }
           }
         }
@@ -97,7 +97,7 @@ export const getWorkoutList = `
 
 export const isConfigured = `
   query isUserConfigured {
-    isUserConfigured 
+    isUserConfigured
   }
 `;
 
@@ -138,7 +138,7 @@ export const getWorkoutById = `
             exercises {
               name
               numReps
-              duration   
+              duration
             }
           }
         }
@@ -176,7 +176,7 @@ export const getWorkoutByDate = `
             exercises {
               name
               numReps
-              duration      
+              duration
             }
           }
         }
@@ -191,3 +191,12 @@ export const getWorkoutByDate = `
     }
   }
 `;
+
+export const getExerciseDefinition = `
+  query getExerciseDefinition($exercise: String!) {
+    getExerciseDefinition(exercise: $exercise) {
+      muscleGroup
+      description
+    }
+  }
+`

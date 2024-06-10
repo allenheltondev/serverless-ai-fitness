@@ -1,0 +1,15 @@
+{
+  "name": "save-exercise-descriptions",
+  "version": "1.0.0",
+  "description": "Saves the descriptions of the generated exercises",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "allenheltondev",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.484.0",
+    "@aws-sdk/util-dynamodb": "^3.484.0"
+  }
+}

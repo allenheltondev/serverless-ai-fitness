@@ -13,13 +13,13 @@ x-amazon-apigateway-gateway-responses:
   BAD_REQUEST_BODY:
     statusCode: 400
     responseTemplates:
-      application/json: '{ "message": "$context.error.validationErrorString" }'    
+      application/json: '{ "message": "$context.error.validationErrorString" }'
 
 paths:
   /workouts:
     get:
       summary: Gets the workout for a specific date
-      description: Get workout details for today. You can supply a "date" query string parameter for other dates      
+      description: Get workout details for today. You can supply a "date" query string parameter for other dates
       responses:
         200:
           description: The workout was found and is returned
@@ -35,6 +35,21 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetWorkoutFunction.Arn}/invocations
+        httpMethod: POST
+        type: aws_proxy
+  /checkout-sessions:
+    post:
+      summary: Creates a new checkout session
+      description: Creats a new Stripe checkout session and redirects user to payment gateway
+      responses:
+        303:
+          description: The session was created and the redirect path was returned in the Location header
+        500:
+          $ref: '#/components/responses/UnknownError'
+      x-amazon-apigateway-request-validator: Validate All
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateCheckoutSessionFunction.Arn}/invocations
         httpMethod: POST
         type: aws_proxy
 
@@ -71,7 +86,7 @@ components:
               message:
                 type: string
                 example: Could not find resource with the provided id
-   
+
     UnknownError:
       description: An unexpected error occurred on the server.
       content:
