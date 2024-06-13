@@ -1,7 +1,8 @@
-const Stripe = require('stripe');
-const shared = require('/opt/nodejs/index');
-const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb');
+import Stripe  from 'stripe';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+import { getSecretValue } from './utils/helpers.mjs';
+
 const ddb = new DynamoDBClient();
 
 const subscriptionPlans = [{
@@ -10,7 +11,7 @@ const subscriptionPlans = [{
   priceId: 'price_1NgWLULPebBCni4ssM38fAa4'
 }]
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     console.log(event);
     return;
@@ -32,7 +33,7 @@ exports.handler = async (event) => {
       customerId = user.customerId;
     }
 
-    const stripeApiKey = await shared.getSecret('stripe');
+    const stripeApiKey = await getSecretValue('stripe');
     const stripe = new Stripe(stripeApiKey);
     const session = await stripe.checkout.sessions.create({
       line_items: [

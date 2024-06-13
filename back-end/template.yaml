@@ -23,18 +23,34 @@ Parameters:
     Type: String
     Description: BaseUrl or root domain name for custom domains
     Default: readysetcloud.io
+  DefaultCacheName:
+    Type: String
+    Default: chatgpt
+
+Metadata:
+  esbuild-properties: &esbuild-properties
+    Format: esm
+    Minify: true
+    OutExtension:
+      - .js=.mjs
+    Target: es2020
+    Sourcemap: false
+    EntryPoints:
+      - index.mjs
+    Banner:
+      - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+    External:
+      - '@aws-sdk/*'
 
 Globals:
   Function:
-    Runtime: nodejs18.x
+    Runtime: nodejs20.x
     Architectures:
       - arm64
     Tracing: Active
     Timeout: 15
     MemorySize: 1024
-    Handler: index.handler
-    Layers:
-      - !Ref SharedLayer
+    CodeUri: functions
     Environment:
       Variables:
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
@@ -117,16 +133,6 @@ Resources:
               - type
               - rating
               - difficulty
-
-  SharedLayer:
-    Type: AWS::Serverless::LayerVersion
-    Metadata:
-      BuildMethod: nodejs18.x
-      BuildArchitecture: arm64
-    Properties:
-      ContentUri: layers/
-      CompatibleRuntimes:
-        - nodejs18.x
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -281,8 +287,14 @@ Resources:
 
   CreateProfilePostConfirmationFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - create-profile-post-confirmation.mjs
     Properties:
-      CodeUri: functions/create-profile-post-confirmation
+      Handler: create-profile-post-confirmation.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -306,8 +318,14 @@ Resources:
 
   RecordLastLoginFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - record-last-login.mjs
     Properties:
-      CodeUri: functions/record-last-login
+      Handler: record-last-login.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -324,6 +342,19 @@ Resources:
           Properties:
             Trigger: PostAuthentication
             UserPool: !Ref CognitoUserPool
+
+  GetTrainingPlanDatesFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - get-training-plan-dates.mjs
+    Properties:
+      Handler: get-training-plan-dates.handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
 
   AiFitnessUserFilesBucket:
     Type: AWS::S3::Bucket
@@ -523,8 +554,14 @@ Resources:
 
   HandleSubscriptionEventFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - handle-subscription-event.mjs
     Properties:
-      CodeUri: functions/handle-subscription-event
+      Handler: handle-subscription-event.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -557,8 +594,14 @@ Resources:
 
   TableStreamFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - table-stream.mjs
     Properties:
-      CodeUri: functions/table-stream
+      Handler: table-stream.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -586,24 +629,29 @@ Resources:
         Filters:
           - Pattern: '{ "dynamodb" : { "Keys" : { "sk" : { "S" : [ "settings" ] } } } }'
 
-  GenerateWeeklyScheduleFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: functions/generate-weekly-schedule
-      Policies:
-        - AWSLambdaBasicExecutionRole
-
   GetUserWorkoutPromptsFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - get-user-workout-prompts.mjs
     Properties:
-      CodeUri: functions/get-user-workout-prompts
+      Handler: get-user-workout-prompts.handler
       Policies:
         - AWSLambdaBasicExecutionRole
 
   GetRandomWorkoutOfTypeFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - create-checkout-session.mjs
     Properties:
-      CodeUri: functions/get-random-workout-of-type
+      Handler: create-checkout-session.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -618,11 +666,18 @@ Resources:
         Variables:
           SECRET_ID: "{{resolve:ssm:/serverless-toolbox/secrets}}"
           TABLE_NAME: !Ref FitnessEncyclopediaTable
+          CACHE_NAME: !Ref DefaultCacheName
 
   SaveExerciseDescriptionsFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - save-exercise-descriptions.mjs
     Properties:
-      CodeUri: functions/save-exercise-descriptions
+      Handler: save-exercise-descriptions.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -657,8 +712,14 @@ Resources:
 
   GetWorkoutFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - get-workout.mjs
     Properties:
-      CodeUri: functions/get-workout
+      Handler: get-workout.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -679,8 +740,14 @@ Resources:
 
   CreateCheckoutSessionFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - create-checkout-session.mjs
     Properties:
-      CodeUri: functions/create-checkout-session
+      Handler: create-checkout-session.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -702,15 +769,27 @@ Resources:
 
   BuildWorkoutNotificationFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - build-workout-notification.mjs
     Properties:
-      CodeUri: functions/build-workout-notification
+      Handler: build-workout-notification.handler
       Policies:
         - AWSLambdaBasicExecutionRole
 
   SaveToDynamoDBFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - save-to-ddb.mjs
     Properties:
-      CodeUri: functions/save-to-ddb
+      Handler: save-to-ddb.handler
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17
@@ -726,8 +805,14 @@ Resources:
 
   UnmarshallItemFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        <<: *esbuild-properties
+        EntryPoints:
+          - unmarshall-item.mjs
     Properties:
-      CodeUri: functions/unmarshall-item
+      Handler: unmarshall-item.handler
       Policies:
         - AWSLambdaBasicExecutionRole
 
@@ -825,7 +910,7 @@ Resources:
         LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
         GetUserWorkoutPrompts: !GetAtt GetUserWorkoutPromptsFunction.Arn
         GetRandomWorkoutOfType: !GetAtt GetRandomWorkoutOfTypeFunction.Arn
-        AskChatGPT: "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
+        AskChatGPT: "{{resolve:ssm:/readysetcloud/ask-openai}}"
         SendWorkoutNotification: !Ref SendWorkoutNotificationStateMachine
         SendWorkoutNotificationRole: !GetAtt SendNotificationSchedulerRole.Arn
         SchedulerCreateSchedule: !Sub arn:${AWS::Partition}:states:::aws-sdk:scheduler:createSchedule
@@ -845,7 +930,7 @@ Resources:
               Action: lambda:InvokeFunction
               Resource:
                 - !GetAtt GetUserWorkoutPromptsFunction.Arn
-                - "{{resolve:ssm:/serverless-toolbox/ask-chatgpt}}"
+                - "{{resolve:ssm:/readysetcloud/ask-openai}}"
                 - !GetAtt SaveToDynamoDBFunction.Arn
                 - !GetAtt GetRandomWorkoutOfTypeFunction.Arn
                 - !GetAtt SaveExerciseDescriptionsFunction.Arn
@@ -867,6 +952,34 @@ Resources:
                 - aifitness
               detail-type:
                 - Generate User Workout
+
+  CreateTrainingPlanStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: STANDARD
+      DefinitionUri: workflows/create-training-plan.asl.json
+      DefinitionSubstitutions:
+        DynamoDbGetItem: !Sub arn:${AWS::Partition}:states:::dynamodb:getItem
+        DynamoDbUpdateItem: !Sub arn:${AWS::Partition}:states:::dynamodb:updateItem
+        TableName: !Ref TableName
+        LambdaInvoke: !Sub arn:${AWS::Partition}:states:::lambda:invoke
+        GetTrainingPlanDates: !GetAtt GetTrainingPlanDatesFunction.Arn
+        AskChatGPT: "{{resolve:ssm:/readysetcloud/ask-openai}}"
+        SaveToDynamoDB: !GetAtt SaveToDynamoDBFunction.Arn
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource:
+                - !GetAtt GetTrainingPlanDatesFunction.Arn
+                - "{{resolve:ssm:/readysetcloud/ask-openai}}"
+                - !GetAtt SaveToDynamoDBFunction.Arn
 
   SendNotificationSchedulerRole:
     Type: AWS::IAM::Role

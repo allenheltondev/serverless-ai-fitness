@@ -13,7 +13,7 @@
         {
           "Variable": "$.userId",
           "IsPresent": true,
-          "Next": "Load User Settings"
+          "Next": "Load User Data"
         }
       ],
       "Default": "userId Not Present"
@@ -27,41 +27,77 @@
       "Parameters": {
         "userId.$": "$.detail.userId"
       },
-      "Next": "Load User Settings"
+      "Next": "Load User Data"
     },
-    "Load User Settings": {
-      "Type": "Task",
-      "Resource": "${DynamoDbGetItem}",
-      "Parameters": {
-        "TableName": "${TableName}",
-        "Key": {
-          "pk": {
-            "S.$": "$.userId"
-          },
-          "sk": {
-            "S": "settings"
-          }
-        }
-      },
-      "Next": "Load User Profile",
-      "ResultPath": "$.settings"
-    },
-    "Load User Profile": {
-      "Type": "Task",
-      "Resource": "${DynamoDbGetItem}",
-      "Parameters": {
-        "TableName": "${TableName}",
-        "Key": {
-          "pk": {
-            "S.$": "$.userId"
-          },
-          "sk": {
-            "S": "user"
-          }
-        }
-      },
+    "Load User Data": {
+      "Type": "Parallel",
       "Next": "Generate Workout Prompts",
-      "ResultPath": "$.profile"
+      "Branches": [
+        {
+          "StartAt": "Load User Settings",
+          "States": {
+            "Load User Settings": {
+              "Type": "Task",
+              "Resource": "${DynamoDbGetItem}",
+              "Parameters": {
+                "TableName": "${TableName}",
+                "Key": {
+                  "pk": {
+                    "S.$": "$.userId"
+                  },
+                  "sk": {
+                    "S": "settings"
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Load User Profile",
+          "States": {
+            "Load User Profile": {
+              "Type": "Task",
+              "Resource": "${DynamoDbGetItem}",
+              "Parameters": {
+                "TableName": "${TableName}",
+                "Key": {
+                  "pk": {
+                    "S.$": "$.userId"
+                  },
+                  "sk": {
+                    "S": "user"
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Get Training Plan Data",
+          "States": {
+            "Get Training Plan Data": {
+              "Type": "Task",
+              "Resource": "${DynamoDbGetItem}",
+              "Parameters": {
+                "TableName": "${TableName}",
+                "Key": {
+                  "pk": {
+                    "S.$": "$.userId"
+                  },
+                  "sk": {
+                    "S": "training plan"
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        }
+      ],
+      "ResultPath": "$.userData"
     },
     "Generate Workout Prompts": {
       "Type": "Task",
@@ -69,8 +105,9 @@
       "Parameters": {
         "FunctionName": "${GetUserWorkoutPrompts}",
         "Payload": {
-          "profile.$": "$.profile.Item",
-          "settings.$": "$.settings.Item",
+          "profile.$": "$.userData[1].Item",
+          "settings.$": "$.userData[0].Item",
+          "trainingPlan.$": "$.userData[2]",
           "unmarshall": true
         }
       },
@@ -712,7 +749,7 @@
       },
       "ItemsPath": "$.workouts.Payload",
       "ItemSelector": {
-        "user.$": "$.profile.Item",
+        "user.$": "$.userData[1].Item",
         "workout.$": "$$.Map.Item.Value"
       },
       "MaxConcurrency": 1,

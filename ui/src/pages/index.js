@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Authenticator, Heading, Text, Flex, Loader, Image, Alert, Link } from '@aws-amplify/ui-react';
@@ -13,14 +13,27 @@ const Home = ({ signout, user }) => {
   const [date, setDate] = useState(new Date().toLocaleDateString('en-US'));
   const [workoutDetail, setWorkoutDetail] = useState();
 
+  const debounce = (func, delay) => {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, delay);
+    };
+  };
+
+  const updateDate = useCallback(debounce((newDate) => {
+    console.log('updating date: ' + newDate);
+    setDate(newDate);
+  }, 300), []);
+
   useEffect(() => {
     if (router.query.date && isValidDate(router.query.date)) {
-        const queryDate = new Date(`${router.query.date}T23:59:59`);
-        setDate(getLocalDate(queryDate));
+      const queryDate = new Date(`${router.query.date}T23:59:59`);
+      updateDate(getLocalDate(queryDate));
     } else {
-      setDate(getLocalDate());
+      updateDate(getLocalDate());
     }
-  }, [router.query]);
+  }, [router.query.date]);
 
   useEffect(() => {
     const fetchWorkoutData = async () => {
@@ -47,7 +60,7 @@ const Home = ({ signout, user }) => {
   }, [date]);
 
   const getLocalDate = (date) => {
-    if(!date){
+    if (!date) {
       date = new Date();
     }
 
@@ -62,7 +75,7 @@ const Home = ({ signout, user }) => {
   const isValidDate = (dateString) => {
     const timestamp = Date.parse(dateString);
     return !isNaN(timestamp);
-  }
+  };
 
   if (loading) {
     return (

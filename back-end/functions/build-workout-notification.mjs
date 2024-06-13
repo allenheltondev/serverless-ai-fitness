@@ -1,4 +1,4 @@
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const { contactMethod, workout, metadata } = event;
 
   let message = '';

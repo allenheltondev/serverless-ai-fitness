@@ -22,7 +22,6 @@ const CalendarPage = ({ signout, user }) => {
 
   useEffect(() => {
     const fetchWorkouts = async () => {
-      console.log('here')
       setLoading(true);
       try {
         const workouts = await API.graphql({

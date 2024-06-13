@@ -1,12 +1,12 @@
-const { DynamoDBClient, UpdateItemCommand, QueryCommand } = require('@aws-sdk/client-dynamodb');
-const { CognitoIdentityProviderClient, AdminAddUserToGroupCommand, AdminRemoveUserFromGroupCommand } = require('@aws-sdk/client-cognito-identity-provider');
-const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb');
+import { DynamoDBClient, UpdateItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
+import { CognitoIdentityProviderClient, AdminAddUserToGroupCommand, AdminRemoveUserFromGroupCommand } from '@aws-sdk/client-cognito-identity-provider';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 const ddb = new DynamoDBClient();
 const cognito = new CognitoIdentityProviderClient();
 
 const memberships = [{ stripeId: 'prod_OTTIJ2Y7QROAjT', groupName: process.env.PRO_MEMBERSHIP_GROUP, level: 'pro' }, { groupName: process.env.FREE_MEMBERSHIP_GROUP, level: 'free' }];
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const { detail } = event;
 
   const user = await getUser(event.detail.data.object.customer);
@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     case 'customer.subscription.deleted':
     case 'customer.subscription.paused':
       const freeMembership = memberships.find(m => m.level == 'free');
-      await updateUserMembership(user, freeMembership, new Date().getTime())
+      await updateUserMembership(user, freeMembership, new Date().getTime());
       break;
   }
 };
