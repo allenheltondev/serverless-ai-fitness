@@ -1,9 +1,9 @@
-const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall } = require('@aws-sdk/util-dynamodb');
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
 
 const ddb = new DynamoDBClient();
 
-exports.handler = async (state) => {
+export const handler = async (state) => {
   let tableName = state.tableName ?? process.env.TABLE_NAME;
   await ddb.send(new PutItemCommand({
     TableName: tableName,

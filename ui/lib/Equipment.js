@@ -6,7 +6,8 @@ const equipment = [
   { name: 'Bodyweight', value: 'bodyweight exercises' },
   { name: 'Medicine Balls', value: 'medicine balls' },
   { name: 'Heavy Bag', value: 'heavy bag' },
-  { name: 'Speed Bag', value: 'speed bag' }
+  { name: 'Speed Bag', value: 'speed bag' },
+  { name: 'Bodyweight Exercises', value: 'bodyweight' }
 ];
 
 export default equipment;

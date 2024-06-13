@@ -1,9 +1,9 @@
-const { unmarshall, marshall } = require('@aws-sdk/util-dynamodb');
-const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+import { unmarshall, marshall } from '@aws-sdk/util-dynamodb';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 
 const ddb = new DynamoDBClient();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   let date = event.queryStringParameters?.date;
   if (!date) {
     date = new Date().toISOString().split('T')[0];
@@ -23,12 +23,12 @@ exports.handler = async (event) => {
     })
   }));
 
-  if(!result.Item){
+  if (!result.Item) {
     return {
       statusCode: 404,
-      body: JSON.stringify({message: 'There is no workout for the requested date'}),
+      body: JSON.stringify({ message: 'There is no workout for the requested date' }),
       headers: { 'Access-Control-Allow-Origin': '*' }
-    }
+    };
   }
 
   const workout = unmarshall(result.Item);

@@ -106,7 +106,7 @@ const ProfilePage = () => {
           </Flex>
           <RadioGroupField label="" name="sex" direction="row" value={profile.demographics?.sex} onChange={handleDemographicChange}>
             <Radio value="male">Male</Radio>
-            <Radio value="femail">Female</Radio>
+            <Radio value="female">Female</Radio>
             <Radio value="other">Other</Radio>
           </RadioGroupField>
           <Divider margin="1em .5em" />

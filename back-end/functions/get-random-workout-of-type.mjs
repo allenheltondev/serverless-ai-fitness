@@ -1,18 +1,18 @@
-const shared = require('/opt/nodejs/index');
-const { CacheGet } = require('@gomomento/sdk');
-const { DynamoDBClient, QueryCommand } = require('@aws-sdk/client-dynamodb');
-const { unmarshall, marshall } = require('@aws-sdk/util-dynamodb');
-const ddb = new DynamoDBClient();
-const cacheName = 'chatgpt';
+import { CacheGet } from '@gomomento/sdk';
+import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
+import { unmarshall, marshall } from '@aws-sdk/util-dynamodb';
+import { getCacheClient } from './utils/helpers.mjs';
 
-exports.handler = async (state) => {
-  const cacheClient = await shared.getCacheClient();
+const ddb = new DynamoDBClient();
+
+export const handler = async (state) => {
+  const cacheClient = await getCacheClient();
   const cacheKey = `${state.muscleGroup}#${state.difficulty}`;
   let workouts;
-  const response = await cacheClient.get(cacheName, cacheKey);
+  const response = await cacheClient.get(process.env.CACHE_NAME, cacheKey);
   if (response instanceof CacheGet.Error || response instanceof CacheGet.Miss) {
     workouts = await loadFromDatabase(cacheKey);
-    await cacheClient.set(cacheName, cacheKey, JSON.stringify(workouts));
+    await cacheClient.set(process.env.CACHE_NAME, cacheKey, JSON.stringify(workouts));
   } else if (response instanceof CacheGet.Hit) {
     workouts = JSON.parse(response.valueString());
   }
@@ -25,7 +25,7 @@ exports.handler = async (state) => {
       const index = Math.floor(Math.random() * potentialWorkouts.length);
       workout = potentialWorkouts[index];
     }
-  }  
+  }
 
   return workout;
 };
@@ -46,7 +46,7 @@ const loadFromDatabase = async (key) => {
     }));
     results.Items.map(i => workouts.push(unmarshall(i)));
     lastEvaluatedKey = results.LastEvaluatedKey;
-  } while (lastEvaluatedKey)
+  } while (lastEvaluatedKey);
 
   return workouts;
 };

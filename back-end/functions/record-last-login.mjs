@@ -1,8 +1,8 @@
-const { DynamoDBClient, UpdateItemCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall } = require('@aws-sdk/util-dynamodb');
+import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
 const ddb = new DynamoDBClient();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     await ddb.send(new UpdateItemCommand({
       TableName: process.env.TABLE_NAME,

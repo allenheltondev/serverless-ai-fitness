@@ -1,4 +1,4 @@
-const { unmarshall } = require('@aws-sdk/util-dynamodb');
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 const FIGHTING_WORKOUTS = ['boxing', 'kickboxing'];
 
 const PROFILE_DEFAULTS = {
@@ -17,12 +17,16 @@ const SETTINGS_DEFAULTS = {
   muscleGroups: ['total body']
 };
 
-exports.handler = async (state) => {
+export const handler = async (state) => {
   let profile = state.profile;
   let settings = state.settings;
+  let trainingPlan = state.trainingPlan;
   if (state.unmarshall) {
     profile = unmarshall(profile);
     settings = unmarshall(settings);
+    if (trainingPlan?.Item) {
+      trainingPlan = unmarshall(trainingPlan.Item);
+    }
   }
 
   profile = { ...PROFILE_DEFAULTS, ...profile };
@@ -41,10 +45,10 @@ exports.handler = async (state) => {
       if (!muscleGroups.length) {
         muscleGroups = shuffleArray([...settings.muscleGroups]);
       }
-      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel ?? 'beginner', profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime);
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
-      workout.date = date.toISOString();
+      const workoutDate = date.toISOString();
+      const workout = createWorkoutPrompt(day, settings.equipment, profile.experienceLevel ?? 'beginner', profile.objective, settings.workoutTypes ?? [{ type: 'standard' }], muscleGroup, settings.targetTime, workoutDate, trainingPlan);
 
       const notificationDate = new Date(date);
       notificationDate.setDate(notificationDate.getDate() - 1);
@@ -67,9 +71,10 @@ exports.handler = async (state) => {
   return workouts.map(w => formatWorkout(w));
 };
 
-const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workoutTypes, muscleGroup, targetTime) => {
+const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workoutTypes, muscleGroup, targetTime, workoutDate, trainingPlan) => {
   const workout = {
     day,
+    date: workoutDate,
     muscleGroup,
     experienceLevel,
     targetTime,
@@ -80,10 +85,14 @@ const createWorkoutPrompt = (day, equipment, experienceLevel, objective, workout
   };
 
   let prompt;
-  if(FIGHTING_WORKOUTS.includes(workout.muscleGroup)){
+  if (FIGHTING_WORKOUTS.includes(workout.muscleGroup)) {
     prompt = getFightingPrompt(workout);
   } else {
     prompt = getWeightPrompt(workout);
+  }
+
+  if (trainingPlan) {
+    prompt += ` ${getTrainingPlanClause(trainingPlan)}`;
   }
 
   workout.prompt = prompt;
@@ -96,6 +105,12 @@ const getWorkoutTypeDescription = (type) => {
       return 'in supersets';
     case 'circuit':
       return 'as a circuit';
+    case 'hiit':
+      return 'as a high-intensity interval session';
+    case 'emom':
+      return 'as an every-minute-on-the-minute workout';
+    case 'amrap':
+      return 'as an as-many-rounds-as-possible workout';
     default:
       return 'as a standard workout';
   };
@@ -160,6 +175,18 @@ const getWeightPrompt = (workout) => {
 
 const getFightingPrompt = (workout) => {
   return `Create a ${workout.muscleGroup} workout for a ${workout.experienceLevel}-level athlete that takes ${workout.targetTime} for the main set.
-  Only include equipment from this list and/or bodyweight (but you don't have to use all equipment): ${workout.equipment}. Create a relevant
-  calisthenic warmup and unique ab set cooldown. Vary the abs from other workouts.`;
-}
+  Only include equipment from this list and/or bodyweight (but you don't have to use all equipment): ${workout.equipment}. Be specific about the combos you describe as "exercises".
+  Create a relevant calisthenic warmup and unique ab set cooldown. Vary the abs from other workouts.`;
+};
+
+const getTrainingPlanClause = (trainingPlan, date) => {
+  const phases = trainingPlan.phases.map(p => `${p.name}: ${p.startDate} - ${p.endDate}`).join('\n');
+
+  const prompt = `
+  This workout is part of a ${trainingPlan.objective} training plan that started on ${trainingPlan.startDate}. Today is ${date}.
+  This is for a ${trainingPlan.athleteDescription}.
+  The program phases are:
+${phases}`;
+
+  return prompt;
+};

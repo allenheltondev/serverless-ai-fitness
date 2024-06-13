@@ -1,0 +1,214 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Load User Profile",
+  "States": {
+    "Load User Profile": {
+      "Type": "Task",
+      "Resource": "${DynamoDbGetItem}",
+      "Parameters": {
+        "TableName": "${TableName}",
+        "Key": {
+          "pk": {
+            "S.$": "$$.Execution.Input.userId"
+          },
+          "sk": {
+            "S": "user"
+          }
+        }
+      },
+      "Next": "Found User Profile?"
+    },
+    "Found User Profile?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Item",
+          "IsPresent": true,
+          "Next": "Build Training Plan Prompt"
+        }
+      ],
+      "Default": "User Not Found"
+    },
+    "Build Training Plan Prompt": {
+      "Type": "Task",
+      "Resource": "${LambdaInvoke}",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload": {
+          "profile.$": "$.Item"
+        },
+        "FunctionName": "${GetTrainingPlanDates}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Get Training Plan Dates"
+    },
+    "Get Training Plan Dates": {
+      "Type": "Task",
+      "Resource": "${LambdaInvoke}",
+      "ResultPath": "$.plan",
+      "ResultSelector": {
+        "details.$": "$.Payload.response"
+      },
+      "Parameters": {
+        "FunctionName": "${AskChatGPT}",
+        "Payload": {
+          "model": "gpt-4-turbo",
+          "systemContext": "You are an expert fitness planner with a specialty in building effective and comprehensive training plans.",
+          "query.$": "$.prompt",
+          "schema.$": "$.schema"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Save Training Plan"
+    },
+    "Save Training Plan": {
+      "Type": "Task",
+      "Resource": "${LambdaInvoke}",
+      "ResultPath": null,
+      "Parameters": {
+        "FunctionName": "${SaveToDynamoDB}",
+        "Payload": {
+          "item": {
+            "pk.$": "$$.Execution.Input.userId",
+            "sk": "training plan",
+            "trainingPlanId.$": "$$.Execution.Id",
+            "phases.$": "$.plan.details.phases",
+            "objective.$": "$.objective",
+            "athleteDescription.$": "$.athleteDescription",
+            "startDate.$": "$.startDate"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Execute Training Plan"
+    },
+    "Execute Training Plan": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Get Current Training Plan Id",
+        "States": {
+          "Get Current Training Plan Id": {
+            "Type": "Task",
+            "Resource": "${DynamoDbGetItem}",
+            "Parameters": {
+              "TableName": "${TableName}",
+              "Key": {
+                "pk": {
+                  "S.$": "$$.Execution.Input.userId"
+                },
+                "sk": {
+                  "S": "training plan"
+                }
+              }
+            },
+            "Next": "Has Training Plan Changed?",
+            "ResultPath": "$.trainingPlan",
+            "ResultSelector": {
+              "id.$": "$.Item.trainingPlanId.S"
+            }
+          },
+          "Has Training Plan Changed?": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Not": {
+                  "Variable": "$.trainingPlan.id",
+                  "StringEqualsPath": "$.trainingPlanId"
+                },
+                "Next": "Training Plan Changed - Stop Execution"
+              }
+            ],
+            "Default": "Set Current Phase"
+          },
+          "Training Plan Changed - Stop Execution": {
+            "Type": "Succeed"
+          },
+          "Set Current Phase": {
+            "Type": "Task",
+            "Resource": "${DynamoDbUpdateItem}",
+            "Parameters": {
+              "TableName": "${TableName}",
+              "Key": {
+                "pk": {
+                  "S.$": "$$.Execution.Input.userId"
+                },
+                "sk": {
+                  "S": "training plan"
+                }
+              },
+              "UpdateExpression": "SET currentPhase = :phase",
+              "ExpressionAttributeValues": {
+                ":phase": {
+                  "S.$": "$.phase.name"
+                }
+              }
+            },
+            "ResultPath": null,
+            "Next": "Format End Date"
+          },
+          "Format End Date": {
+            "Type": "Pass",
+            "Next": "Wait For Next Phase to Start",
+            "Parameters": {
+              "endDate.$": "States.Format('{}T23:59:59Z', $.phase.endDate)"
+            }
+          },
+          "Wait For Next Phase to Start": {
+            "Type": "Wait",
+            "End": true,
+            "TimestampPath": "$.endDate"
+          }
+        }
+      },
+      "End": true,
+      "ItemsPath": "$.plan.details.phases",
+      "MaxConcurrency": 1,
+      "ItemSelector": {
+        "trainingPlanId.$": "$$.Execution.Id",
+        "phase.$": "$$.Map.Item.Value"
+      }
+    },
+    "User Not Found": {
+      "Type": "Fail"
+    }
+  }
+}

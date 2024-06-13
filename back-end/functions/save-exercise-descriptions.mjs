@@ -1,9 +1,9 @@
-const { DynamoDBClient, BatchWriteItemCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall } = require('@aws-sdk/util-dynamodb');
+import { DynamoDBClient, BatchWriteItemCommand } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
 
 const ddb = new DynamoDBClient();
 
-exports.handler = async (state) => {
+export const handler = async (state) => {
   const batchWritePromises = [];
   let batch = [];
 

@@ -1,8 +1,9 @@
-const { unmarshall } = require('@aws-sdk/util-dynamodb');
-const { EventBridgeClient, PutEventsCommand } = require('@aws-sdk/client-eventbridge');
+import { unmarshall } from '@aws-sdk/util-dynamodb';
+import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+
 const eventBridge = new EventBridgeClient();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     await Promise.allSettled(event.Records.map(async (r) => await handleRecord(r)));
   } catch (err) {
@@ -13,7 +14,7 @@ exports.handler = async (event) => {
 const handleRecord = async (record) => {
   switch (record.eventName) {
     case 'INSERT':
-      await processUpdate(unmarshall(record.dynamodb.NewImage))
+      await processUpdate(unmarshall(record.dynamodb.NewImage));
     case 'MODIFY':
       const newVersion = unmarshall(record.dynamodb.NewImage);
       const oldVersion = unmarshall(record.dynamodb.OldImage);
@@ -28,7 +29,7 @@ const handleRecord = async (record) => {
 
 const processUpdate = async (record) => {
   await eventBridge.send(new PutEventsCommand({
-    Entries:[
+    Entries: [
       {
         Source: 'aifitness',
         DetailType: 'Generate User Workout',

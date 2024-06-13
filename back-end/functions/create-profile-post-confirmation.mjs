@@ -1,12 +1,11 @@
-const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall } = require('@aws-sdk/util-dynamodb');
-const Stripe = require('stripe');
-
-const shared = require('/opt/nodejs/index');
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
+import Stripe from 'stripe';
+import { getSecretValue } from './utils/helpers.mjs';
 
 const ddb = new DynamoDBClient();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     const results = await Promise.allSettled([
       await saveProfileRecord(event.request.userAttributes.sub, event.userName),
@@ -75,7 +74,7 @@ const saveSettingsRecord = async (userId) => {
 };
 
 const getPaymentId = async (userId) => {
-  const stripeApiKey = await shared.getSecret('stripe');
+  const stripeApiKey = await getSecretValue('stripe');
   const stripe = new Stripe(stripeApiKey);
   const customer = await stripe.customers.create({
     description: 'Fitness App customer',
