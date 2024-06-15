@@ -220,7 +220,7 @@
             "Parameters": {
               "FunctionName": "${AskChatGPT}",
               "Payload": {
-                "model": "gpt-4-turbo",
+                "model": "gpt-4o",
                 "systemContext": "You are an expert fitness trainer. You build unique, creative, powerful, and effective workouts that accomplish the trainee's goals and fit in the given time frame. You provide varied yet consistent workouts to build cohesive workout programs. Each workout you create should have exercise variance in the warmup, main set, and abs.",
                 "query.$": "$.workout.prompt",
                 "conversationKey.$": "$$.Execution.Id",

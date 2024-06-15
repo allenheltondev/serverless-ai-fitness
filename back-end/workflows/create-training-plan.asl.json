@@ -64,7 +64,7 @@
       "Parameters": {
         "FunctionName": "${AskChatGPT}",
         "Payload": {
-          "model": "gpt-4-turbo",
+          "model": "gpt-4o",
           "systemContext": "You are an expert fitness planner with a specialty in building effective and comprehensive training plans.",
           "query.$": "$.prompt",
           "schema.$": "$.schema"
